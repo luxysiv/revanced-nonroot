@@ -1,5 +1,6 @@
 name: Patch YouTube APK
 on:
+  push:
   workflow_dispatch:
 jobs:
   patch:
