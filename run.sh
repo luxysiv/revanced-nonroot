@@ -1,4 +1,5 @@
 #!/bin/bash
+source version.txt
 
 declare -A repositories=(
     ["revanced-cli"]="revanced/revanced-cli"
@@ -19,7 +20,7 @@ for repo in "${!repositories[@]}"; do
     done
 done
 
-wget -nv -O "yt.apk" "$(echo $YT_URL | sed 's/&dl=0/&dl=1/')"
+wget -nv -O "youtube-$version.apk" "$(echo $YT_URL | sed 's/&dl=0/&dl=1/')"
 
 mapfile -t lines < ./patches.txt
 
@@ -36,13 +37,13 @@ java -jar revanced-cli*.jar patch \
     --patch-bundle revanced-patches*.jar \
     "${exclude_patches[@]}" \
     "${include_patches[@]}" \
-    --out patched.apk \
-    yt.apk
+    --out patched-youtube-$version.apk \
+    youtube-$version.apk
 
 apksigner=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner | sort -r | head -n 1)
 "$apksigner" sign --ks public.jks \
     --ks-key-alias public \
     --ks-pass pass:public \
     --key-pass pass:public \
-    --in patched.apk \
-    --out "youtube-revanced-v18.45.43.apk"
+    --in patched-youtube-$version.apk \
+    --out "youtube-revanced-v$version.apk"
