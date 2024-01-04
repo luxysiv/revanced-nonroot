@@ -19,7 +19,7 @@ jobs:
       - name: Patch apk
         run: bash run.sh  
         env:
-          YT_URL: ${{ vars.YT_URL }}
+          YT_URL: ${{ secrets.YT_URL }}
         
       - name: Generate release info
         run: | 
