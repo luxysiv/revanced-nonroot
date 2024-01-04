@@ -37,7 +37,7 @@ java -jar revanced-cli*.jar patch \
     --patch-bundle revanced-patches*.jar \
     "${exclude_patches[@]}" \
     "${include_patches[@]}" \
-    --out patched-youtube-$version.apk \
+    --out patched-youtube-v$version.apk \
     youtube-v$version.apk
 
 apksigner=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner | sort -r | head -n 1)
