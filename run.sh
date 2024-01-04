@@ -20,7 +20,7 @@ for repo in "${!repositories[@]}"; do
     done
 done
 
-wget -nv -O "youtube-$version.apk" "$(echo $YT_URL | sed 's/&dl=0/&dl=1/')"
+wget -nv -O "youtube-v$version.apk" "$(echo $YT_URL | sed 's/&dl=0/&dl=1/')"
 
 mapfile -t lines < ./patches.txt
 
@@ -38,12 +38,12 @@ java -jar revanced-cli*.jar patch \
     "${exclude_patches[@]}" \
     "${include_patches[@]}" \
     --out patched-youtube-$version.apk \
-    youtube-$version.apk
+    youtube-v$version.apk
 
 apksigner=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner | sort -r | head -n 1)
 "$apksigner" sign --ks public.jks \
     --ks-key-alias public \
     --ks-pass pass:public \
     --key-pass pass:public \
-    --in patched-youtube-$version.apk \
+    --in patched-youtube-v$version.apk \
     --out "youtube-revanced-v$version.apk"
