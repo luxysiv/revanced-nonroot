@@ -1,5 +1,5 @@
 #!/bin/bash
-source version.txt
+source ytversion.txt
 
 declare -A repositories=(
     ["revanced-cli"]="revanced/revanced-cli"
