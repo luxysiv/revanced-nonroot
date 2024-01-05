@@ -25,7 +25,7 @@ for repo in "${!repositories[@]}"; do
 done
 
 # Download YouTube APK
-wget -nv -O "youtube-v$version.apk" "$(echo $YT_URL | sed 's/&dl=0/&dl=1/')"
+wget -nv -O "youtube-v$version.apk" "$(echo $YT_URL | sed 's/0$/1/')"
 
 # Read patches from file
 mapfile -t lines < ./patches.txt
