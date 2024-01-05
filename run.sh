@@ -12,7 +12,7 @@ declare -A repositories=(
 
 # Download latest releases for specified repositories
 for repo in "${!repositories[@]}"; do
-    response=$(wget -nvO - "https://api.github.com/repos/${repositories[$repo]}/releases/latest")
+    response=$(wget -nvO- "https://api.github.com/repos/${repositories[$repo]}/releases/latest")
 
     asset_urls=($(
         echo "$response" | jq -r --arg repo_name "$repo" \
