@@ -1,6 +1,6 @@
 **YouTube Revanced**
 
-**Download page**
+**Download page** (Take from hidden latest release)
   - https://luxysiv.github.io/revanced-nonroot/
 
 **Latest release information**
