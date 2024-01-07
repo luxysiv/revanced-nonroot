@@ -1,6 +1,8 @@
 name: Patch YouTube APK
 on:
   push:
+  schedule:
+    - cron: "0 10 * * *"
   workflow_dispatch:
 jobs:
   patch:
@@ -17,9 +19,9 @@ jobs:
           java-version: '17'
       
       - name: Patch apk
-        run: bash run.sh  
+        run: bash main.sh  
         env:
-          YT_URL: ${{ secrets.YT_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Generate release info
         run: | 
@@ -52,4 +54,3 @@ jobs:
           repository: ${{ github.repository }}
           retain_days: 0
           keep_minimum_runs: 1
-    
