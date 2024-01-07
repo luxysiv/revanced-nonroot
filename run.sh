@@ -1,7 +1,10 @@
 #!/bin/bash
 
-# Source YouTube version from file
-source ytversion.txt
+# Dropbox YouTube UrL
+yt_url="https://www.dropbox.com/scl/fi/8dyfsbndpgn6g50ifgy39/youtube-v18.45.43.apk?rlkey=22v7jam3t6barkv4v5ag39kix&dl=0"
+
+# Take version from Dropbox link
+version=$(echo "$yt_url" | grep -oP '\d+(\.\d+)+')
 
 # Declare repositories
 declare -A repositories=(
@@ -25,7 +28,7 @@ for repo in "${!repositories[@]}"; do
 done
 
 # Download YouTube APK
-wget -nv -O "youtube-v$version.apk" "$(echo $YT_URL | sed 's/0$/1/')"
+wget -nv -O "youtube-v$version.apk" "$(echo $yt_url | sed 's/0$/1/')"
 
 # Read patches from file
 mapfile -t lines < ./patches.txt
@@ -56,3 +59,20 @@ apksigner=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner | sort -r | hea
     --key-pass pass:public \
     --in "patched-youtube-v$version.apk" \
     --out "youtube-revanced-v$version.apk"
+
+# Obtain highest supported version information using revanced-cli
+package_info=$(java -jar revanced-cli*.jar list-versions -f com.google.android.youtube revanced-patches*.jar)
+highest_supported_version=$(echo "$package_info" | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p')
+
+# Remove all lines containing version information
+sed -i '/[0-9.]\+/d' version.txt
+
+# Write highest supported version to version.txt
+echo "$highest_supported_version" >> version.txt
+
+# Upload version.txt to Github 
+git config --global user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com" > /dev/null 2>&1
+git config --global user.name "$(gh api /users/${GITHUB_ACTOR} | jq .name -r)" > /dev/null 2>&1
+git add version.txt > /dev/null 2>&1
+git commit -m "Update version" --author="${GITHUB_ACTOR} <${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com>" > /dev/null 2>&1
+git push origin main > /dev/null 2>&1
