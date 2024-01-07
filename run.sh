@@ -74,5 +74,5 @@ echo "$highest_supported_version" >> version.txt
 git config --global user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com" > /dev/null 2>&1
 git config --global user.name "$(gh api /users/${GITHUB_ACTOR} | jq .name -r)" > /dev/null 2>&1
 git add version.txt > /dev/null 2>&1
-git commit -m "Update version" --author="${GITHUB_ACTOR} <${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com>" > /dev/null 2>&1
+git commit -m "Update version" --author=. > /dev/null 2>&1
 git push origin main > /dev/null 2>&1
