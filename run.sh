@@ -68,8 +68,8 @@ highest_supported_version=$(echo "$package_info" | grep -oP '\d+(\.\d+)+' | sort
 sed -i '/[0-9.]\+/d' version.txt
 
 # Write highest supported version to version.txt
-[[$highest_supported_version == $version]] && echo "Same $highest_supported_version version" >> version.txt
-[[$highest_supported_version != $version]] && echo "Supported version is $highest_supported_version , Pls update!" >> version.txt
+[[ $highest_supported_version == $version ]] && echo "Same $highest_supported_version version" >> version.txt
+[[ $highest_supported_version != $version ]] && echo "Supported version is $highest_supported_version , Pls update!" >> version.txt
 
 # Upload version.txt to Github 
 git config --global user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com" > /dev/null 2>&1
