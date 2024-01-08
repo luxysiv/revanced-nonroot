@@ -1,1 +1,1 @@
-Highest Supported Version: 18.45.43
+Highest YouTube supported version: 18.45.43
