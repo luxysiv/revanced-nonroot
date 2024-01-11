@@ -52,9 +52,9 @@ function Apply-Patches {
     }
 
     # Apply patches using Revanced tools
-    java -jar revanced-cli*.jar patch `
-        --merge revanced-integrations*.apk `
-        --patch-bundle revanced-patches*.jar `
+    java -jar "revanced-cli*.jar" patch `
+        --merge "revanced-integrations*.apk" `
+        --patch-bundle "revanced-patches*.jar" `
         $($excludePatches + $includePatches) `
         --out "patched-youtube-v$version.apk" `
         "youtube-v$version.apk"
