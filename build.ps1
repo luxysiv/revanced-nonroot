@@ -27,7 +27,12 @@ $scriptRepoLatestRelease = $null
 try {
     $scriptRepoLatestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/$repoOwner/$repoName/releases/latest" -Headers @{ Authorization = "token $accessToken" }
 } catch {
-    Install-JDK
+    Download-YoutubeAPK -ytUrl $ytUrl -version $version
+    Apply-Patches -version $version -ytUrl $ytUrl
+    Sign-PatchedAPK -version $version
+    Update-VersionFile -version $version
+    Upload-ToGithub
+    Create-GitHubRelease -tagName $tagName -accessToken $accessToken -apkFilePath $apkFilePath -patchFilePath $patchFilePath
     exit
 }
 $scriptRepoBody = $scriptRepoLatestRelease.body
@@ -37,7 +42,12 @@ $downloadedPatchFileName = (Get-ChildItem -Filter "revanced-patches*.jar").BaseN
 
 # Check if the body content matches the downloaded patch file name
 if (Check-ReleaseBody -scriptRepoBody $scriptRepoBody -downloadedPatchFileName $downloadedPatchFileName) {
-    Install-JDK
+    Download-YoutubeAPK -ytUrl $ytUrl -version $version
+    Apply-Patches -version $version -ytUrl $ytUrl
+    Sign-PatchedAPK -version $version
+    Update-VersionFile -version $version
+    Upload-ToGithub
+    Create-GitHubRelease -tagName $tagName -accessToken $accessToken -apkFilePath $apkFilePath -patchFilePath $patchFilePath
 } else {
     Write-Host "Skipping because patched." -ForegroundColor Yellow
 }
