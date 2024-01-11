@@ -52,9 +52,9 @@ function Apply-Patches {
     }
 
     # Apply patches using Revanced tools
-    java -jar "revanced-cli*.jar" patch `
-        --merge "revanced-integrations*.apk" `
-        --patch-bundle "revanced-patches*.jar" `
+    java -jar revanced-cli*.jar patch `
+        --merge revanced-integrations*.apk `
+        --patch-bundle revanced-patches*.jar `
         $($excludePatches + $includePatches) `
         --out "patched-youtube-v$version.apk" `
         "youtube-v$version.apk"
@@ -190,4 +190,8 @@ function Install-ZuluJDK {
     Start-Process -FilePath "msiexec" -ArgumentList "/i `"$msiPath`" /quiet /qb /norestart" -Wait
 
     Remove-Item -Path $msiPath -Force
+
+    $jdkPath = "C:\Program Files\Zulu\zulu-$zuluTag-x64"
+    [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $jdkPath, [System.EnvironmentVariableTarget]::Machine)
+    [System.Environment]::SetEnvironmentVariable("PATH", "$jdkPath\bin;$env:PATH", [System.EnvironmentVariableTarget]::Machine)
 }
