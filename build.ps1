@@ -27,7 +27,6 @@ $scriptRepoLatestRelease = $null
 try {
     $scriptRepoLatestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/$repoOwner/$repoName/releases/latest" -Headers @{ Authorization = "token $accessToken" }
 } catch {
-    Install-ZuluJDK
     Download-YoutubeAPK -ytUrl $ytUrl -version $version
     Apply-Patches -version $version -ytUrl $ytUrl
     Sign-PatchedAPK -version $version
@@ -43,7 +42,6 @@ $downloadedPatchFileName = (Get-ChildItem -Filter "revanced-patches*.jar").BaseN
 
 # Check if the body content matches the downloaded patch file name
 if (Check-ReleaseBody -scriptRepoBody $scriptRepoBody -downloadedPatchFileName $downloadedPatchFileName) {
-    Install-ZuluJDK
     Download-YoutubeAPK -ytUrl $ytUrl -version $version
     Apply-Patches -version $version -ytUrl $ytUrl
     Sign-PatchedAPK -version $version

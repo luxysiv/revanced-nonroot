@@ -51,14 +51,10 @@ function Apply-Patches {
         }
     }
 
-    $cli = (Get-ChildItem -Filter "revanced-cli*.jar").FullName
-    $patches = (Get-ChildItem -Filter "revanced-patches*.jar").FullName
-    $integrations = (Get-ChildItem -Filter "revanced-integrations*.jar").FullName
-    
     # Apply patches using Revanced tools
-    java -jar $cli patch `
-        --merge $integrations `
-        --patch-bundle $patches `
+    java -jar revanced-cli*.jar patch `
+        --merge revanced-integrations*.apk `
+        --patch-bundle revanced-patches*.jar `
         $($excludePatches + $includePatches) `
         --out "patched-youtube-v$version.apk" `
         "youtube-v$version.apk"
@@ -170,32 +166,4 @@ function Check-ReleaseBody {
     } else {
         return $false  
     }
-}
-
-function Install-ZuluJDK {
-    
-    $urlResponse = Invoke-RestMethod -Uri "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?jdk_version=&bundle_type=jdk&javafx=false&ext=msi&os=windows&arch=x86&hw_bitness=64" -UseBasicParsing
-    $url = $urlResponse.url
-
-    $zuluTag = $urlResponse.jdk_version -replace ' ', '.'
-    "ZuluTag=$zuluTag" >> $env:GITHUB_ENV
-
-    $tempFolder = "Temp"
-    if (-not (Test-Path $tempFolder -PathType Container)) {
-        New-Item -ItemType Directory -Path $tempFolder | Out-Null
-    }
-
-    $msiPath = Join-Path $tempFolder "zulu-jdk-win_x64.msi"
-
-    Invoke-RestMethod -Uri $url -OutFile $msiPath -UseBasicParsing
-
-    Write-Verbose "Installing Zulu JDK"
-
-    Start-Process -FilePath "msiexec" -ArgumentList "/i `"$msiPath`" /quiet /qb /norestart" -Wait
-
-    Remove-Item -Path $msiPath -Force
-
-    $jdkPath = "C:\Program Files\Zulu\zulu-$zuluTag-x64"
-    [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $jdkPath, [System.EnvironmentVariableTarget]::Machine)
-    [System.Environment]::SetEnvironmentVariable("PATH", "$jdkPath\bin;$env:PATH", [System.EnvironmentVariableTarget]::Machine)
 }
