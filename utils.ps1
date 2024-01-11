@@ -51,9 +51,9 @@ function Apply-Patches {
         }
     }
 
-    $cli = (Get-ChildItem -Filter "revanced-cli*.jar").BaseName
-    $patches = (Get-ChildItem -Filter "revanced-patches*.jar").BaseName
-    $integrations = (Get-ChildItem -Filter "revanced-integrations*.jar").BaseName
+    $cli = (Get-ChildItem -Filter "revanced-cli*.jar").FullName
+    $patches = (Get-ChildItem -Filter "revanced-patches*.jar").FullName
+    $integrations = (Get-ChildItem -Filter "revanced-integrations*.jar").FullName
     
     # Apply patches using Revanced tools
     java -jar $cli patch `
