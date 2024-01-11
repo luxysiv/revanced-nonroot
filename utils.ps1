@@ -167,3 +167,20 @@ function Check-ReleaseBody {
         return $false  
     }
 }
+
+function Install-ZuluJDK {
+    
+    $urlResponse = Invoke-RestMethod -Uri "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?jdk_version=&bundle_type=jdk&javafx=false&ext=msi&os=windows&arch=x86&hw_bitness=64" -UseBasicParsing
+    $url = $urlResponse.url
+
+    $zuluTag = $urlResponse.jdk_version -replace ' ', '.'
+    "ZuluTag=$zuluTag" >> $env:GITHUB_ENV
+
+    Invoke-RestMethod -Uri $url -OutFile "Temp\zulu-jdk-win_x64.msi" -UseBasicParsing
+
+    Write-Verbose "Installing Zulu JDK"
+
+    Start-Process -FilePath "msiexec" -ArgumentList '/i "Temp\zulu-jdk-win_x64.msi" /quiet /qb /norestart' -Wait
+
+    Remove-Item -Path "Temp\zulu-jdk-win_x64.msi" -Force
+}
