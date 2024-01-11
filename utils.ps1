@@ -51,10 +51,14 @@ function Apply-Patches {
         }
     }
 
+    $cli = (Get-ChildItem -Filter "revanced-cli*.jar").BaseName
+    $patches = (Get-ChildItem -Filter "revanced-patches*.jar").BaseName
+    $integrations = (Get-ChildItem -Filter "revanced-integrations*.jar").BaseName
+    
     # Apply patches using Revanced tools
-    java -jar revanced-cli*.jar patch `
-        --merge revanced-integrations*.apk `
-        --patch-bundle revanced-patches*.jar `
+    java -jar $cli patch `
+        --merge $integrations `
+        --patch-bundle $patches `
         $($excludePatches + $includePatches) `
         --out "patched-youtube-v$version.apk" `
         "youtube-v$version.apk"
