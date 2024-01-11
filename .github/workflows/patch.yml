@@ -20,6 +20,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Patch Revanced
+      shell: pwsh
       run: .\build.ps1
              
     - name: Delete workflow runs
