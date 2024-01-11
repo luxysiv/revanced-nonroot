@@ -167,3 +167,12 @@ function Check-ReleaseBody {
         return $false  
     }
 }
+
+function Install-JDK {
+    $javaVersion = "17"
+    Invoke-WebRequest -Uri 'https://adoptopenjdk.net/installationmanager/version.txt' -OutFile 'version.txt'
+    $version = Get-Content 'version.txt' | Out-String
+    Invoke-WebRequest -Uri "https://adoptopenjdk.net/installationmanager/install?jdk=hotspot&os=linux&arch=x64&release=latest&installationType=jdk&vendor=adoptopenjdk&version=$version" -OutFile "OpenJDK$javaVersion.tar.gz"
+    tar -xzvf "OpenJDK$javaVersion.tar.gz"
+    $env:PATH = "$PWD/jdk-$javaVersion/bin;$env:PATH"
+}
