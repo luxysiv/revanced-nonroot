@@ -9,7 +9,7 @@ jobs:
   build:
     name: Patch YouTube 
     permissions: write-all
-    runs-on: ubuntu-latest
+    runs-on: window-latest
     env:
       GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
       GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
