@@ -176,11 +176,18 @@ function Install-ZuluJDK {
     $zuluTag = $urlResponse.jdk_version -replace ' ', '.'
     "ZuluTag=$zuluTag" >> $env:GITHUB_ENV
 
-    Invoke-RestMethod -Uri $url -OutFile "Temp\zulu-jdk-win_x64.msi" -UseBasicParsing
+    $tempFolder = "Temp"
+    if (-not (Test-Path $tempFolder -PathType Container)) {
+        New-Item -ItemType Directory -Path $tempFolder | Out-Null
+    }
+
+    $msiPath = Join-Path $tempFolder "zulu-jdk-win_x64.msi"
+
+    Invoke-RestMethod -Uri $url -OutFile $msiPath -UseBasicParsing
 
     Write-Verbose "Installing Zulu JDK"
 
-    Start-Process -FilePath "msiexec" -ArgumentList '/i "Temp\zulu-jdk-win_x64.msi" /quiet /qb /norestart' -Wait
+    Start-Process -FilePath "msiexec" -ArgumentList "/i `"$msiPath`" /quiet /qb /norestart" -Wait
 
-    Remove-Item -Path "Temp\zulu-jdk-win_x64.msi" -Force
+    Remove-Item -Path $msiPath -Force
 }
