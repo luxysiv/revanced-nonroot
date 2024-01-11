@@ -1,46 +1,39 @@
-name: Patch YouTube APK
+name: Patch Revanced 
 on:
   push:
   schedule:
     - cron: "0 10 * * *"
   workflow_dispatch:
+    
 jobs:
-  patch:
-    name: Patch YouTube
+  build:
+    name: Patch YouTube 
     permissions: write-all
     runs-on: ubuntu-latest
     env:
+      GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
     steps:
-      - uses: actions/checkout@v3
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-      - name: Set up jdk
-        uses: actions/setup-java@v3.10.0
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-      
-      - name: Patch apk
-        run: bash main.sh  
-        
-      - name: Generate release info
-        run: | 
-          echo "
-          **Patches Changelog:** :point_down:
-          [Revanced](https://github.com/revanced/revanced-patches/releases/latest)
-          "> ${{ github.workspace }}-CHANGELOG.txt
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'adopt'
+        java-version: '17'
+
+    - name: Patch Revanced
+      shell: pwsh
+      run: |
+        .\build.ps1
              
-      - name: Release
-        uses: softprops/action-gh-release@v0.1.15
-        with:
-          files: youtube-revanced*.apk 
-          tag_name: latest
-          body_path: ${{ github.workspace }}-CHANGELOG.txt
-          
-      - name: Delete workflow runs
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          retain_days: 0
-          keep_minimum_runs: 1
+    - name: Delete workflow runs
+      uses: Mattraks/delete-workflow-runs@v2
+      with:
+        token: ${{ github.token }}
+        repository: ${{ github.repository }}
+        retain_days: 0
+        keep_minimum_runs: 1
