@@ -175,8 +175,8 @@ function Install-JDK {
     Write-Host "Downloading from: $downloadUrl"
     Invoke-WebRequest -Uri $downloadUrl -OutFile "OpenJDK$javaVersion.tar"
 
-    Write-Host "Attempting to extract using tar"
-    tar -xvf "OpenJDK$javaVersion.tar"
+    Write-Host "Contents of the downloaded file:"
+    Get-Content "OpenJDK$javaVersion.tar"
 
     $env:PATH = "$PWD/jdk-$javaVersion/bin;$env:PATH"
 }
