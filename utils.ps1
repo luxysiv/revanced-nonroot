@@ -85,8 +85,8 @@ function Update-VersionFile {
     $highestSupportedVersion = [regex]::Matches($packageInfo, '\d+(\.\d+)+') | ForEach-Object { $_.Value } | Sort-Object -Descending | Select-Object -First 1
 
     # Remove all lines containing version information
-    (Get-Content -Path .\version.txt) -notmatch '[0-9.]' | Set-Content -Path .\version.txt
-
+    $null | Set-Content -Path .\version.txt
+    
     # Write highest supported version to version.txt
     if ($highestSupportedVersion -eq $version) {
         Add-Content -Path .\version.txt -Value "Same $highestSupportedVersion version"
