@@ -122,6 +122,11 @@ function Create-GitHubRelease {
         body = "$patchFileName"  
     } | ConvertTo-Json
 
+    # Only release with APK file
+    if (-not $apkFilePath) {
+        exit
+    }
+
     # Check if the release with the same tag already exists
     try {
         $existingRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName" -Headers @{ Authorization = "token $accessToken" }
