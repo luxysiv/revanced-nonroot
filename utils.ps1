@@ -50,6 +50,10 @@ function Apply-Patches {
             }
         }
     }
+    
+    $revancedCli = (Get-ChildItem -Filter "revanced-cli*.jar").FullName
+    $revancedPatches = (Get-ChildItem -Filter "revanced-patches*.jar").FullName
+    $revancedIntegrations = (Get-ChildItem -Filter "revanced-integrations*.jar").FullName
 
     # Apply patches using Revanced tools
     java -jar $revancedCli patch `
@@ -64,7 +68,10 @@ function Sign-PatchedAPK {
     param (
         [string]$version
     )
-
+    
+    $revancedCli = (Get-ChildItem -Filter "revanced-cli*.jar").FullName
+    $revancedPatches = (Get-ChildItem -Filter "revanced-patches*.jar").FullName
+    
     # Sign the patched APK
     $apksigner = Get-ChildItem -Path "$env:ANDROID_SDK_ROOT/build-tools" -Filter apksigner -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     & $apksigner.FullName sign --ks public.jks `
