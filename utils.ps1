@@ -50,15 +50,11 @@ function Apply-Patches {
             }
         }
     }
-    
-    $revancedCli = (Get-ChildItem -Filter "revanced-cli*.jar").FullName
-    $revancedPatches = (Get-ChildItem -Filter "revanced-patches*.jar").FullName
-    $revancedIntegrations = (Get-ChildItem -Filter "revanced-integrations*.jar").FullName
-    
+
     # Apply patches using Revanced tools
-    java -jar $revancedCli patch `
-        --merge $revancedIntegrations `
-        --patch-bundle $revancedPatches `
+    java -jar revanced-cli*.jar patch `
+        --merge revanced-integrations*.apk `
+        --patch-bundle revanced-patches*.jar `
         $($excludePatches + $includePatches) `
         --out "patched-youtube-v$version.apk" `
         "youtube-v$version.apk"
@@ -68,7 +64,7 @@ function Sign-PatchedAPK {
     param (
         [string]$version
     )
-    
+
     # Sign the patched APK
     $apksigner = Get-ChildItem -Path "$env:ANDROID_SDK_ROOT/build-tools" -Filter apksigner -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     & $apksigner.FullName sign --ks public.jks `
@@ -84,11 +80,8 @@ function Update-VersionFile {
         [string]$version
     )
 
-    $revancedCli = (Get-ChildItem -Filter "revanced-cli*.jar").FullName
-    $revancedPatches = (Get-ChildItem -Filter "revanced-patches*.jar").FullName
-
     # Obtain highest supported version information using revanced-cli
-    $packageInfo = java -jar $revancedCli list-versions -f com.google.android.youtube $revancedPatches
+    $packageInfo = java -jar revanced-cli*.jar list-versions -f com.google.android.youtube revanced-patches*.jar
     $highestSupportedVersion = [regex]::Matches($packageInfo, '\d+(\.\d+)+') | ForEach-Object { $_.Value } | Sort-Object -Descending | Select-Object -First 1
 
     # Remove all lines containing version information
