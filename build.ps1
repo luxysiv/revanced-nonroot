@@ -16,6 +16,9 @@ $accessToken = $accessToken = $env:GITHUB_TOKEN
 $tagName = Get-Date -Format "dd-MM-yyyy"
 $apkFilePath = "youtube-revanced*.apk"
 $patchFilePath = "revanced-patches*.jar"
+$revancedCli = (Get-ChildItem -Filter "revanced-cli*.jar").FullName
+$revancedPatches = (Get-ChildItem -Filter "revanced-patches*.jar").FullName
+$revancedIntegrations = (Get-ChildItem -Filter "revanced-integrations*.jar").FullName
 
 # Perform Download-RepositoryAssets
 foreach ($repo in $repositories.Keys) {
