@@ -52,9 +52,9 @@ function Apply-Patches {
     }
 
     # Apply patches using Revanced tools
-    java -jar revanced-cli*.jar patch `
-        --merge revanced-integrations*.apk `
-        --patch-bundle revanced-patches*.jar `
+    java -jar $revancedCli patch `
+        --merge $revancedIntegrations `
+        --patch-bundle $revancedPatches `
         $($excludePatches + $includePatches) `
         --out "patched-youtube-v$version.apk" `
         "youtube-v$version.apk"
@@ -81,7 +81,7 @@ function Update-VersionFile {
     )
 
     # Obtain highest supported version information using revanced-cli
-    $packageInfo = java -jar revanced-cli*.jar list-versions -f com.google.android.youtube revanced-patches*.jar
+    $packageInfo = java -jar $revancedCli list-versions -f com.google.android.youtube $revancedPatches
     $highestSupportedVersion = [regex]::Matches($packageInfo, '\d+(\.\d+)+') | ForEach-Object { $_.Value } | Sort-Object -Descending | Select-Object -First 1
 
     # Remove all lines containing version information
