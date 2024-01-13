@@ -51,24 +51,18 @@ function Apply-Patches {
     }
 
     # Apply patches using Revanced tools
-    Write-Host "Starting patch application for YouTube version $version..." -ForegroundColor Yellow
-    
     java -jar revanced-cli*.jar patch `
         --merge revanced-integrations*.apk `
         --patch-bundle revanced-patches*.jar `
         $($excludePatches + $includePatches) `
         --out "patched-youtube-v$version.apk" `
         "youtube-v$version.apk"
-
-    Write-Host "Patch application completed for YouTube version $version." -ForegroundColor Green
 }
 
 function Sign-PatchedAPK {
     param (
         [string]$version
     )
-
-    Write-Host "Starting APK signing for patched YouTube version $version..." -ForegroundColor Yellow
 
     # Sign the patched APK
     $apksigner = Get-ChildItem -Path "$env:ANDROID_SDK_ROOT/build-tools" -Filter apksigner -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -78,8 +72,6 @@ function Sign-PatchedAPK {
         --key-pass pass:public `
         --in "patched-youtube-v$version.apk" `
         --out "youtube-revanced-v$version.apk"
-
-    Write-Host "APK signing completed for patched YouTube version $version." -ForegroundColor Green
 }
 
 function Update-VersionFile {
