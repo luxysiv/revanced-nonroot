@@ -1,4 +1,5 @@
 function Download-RepositoryAssets {
+function Download-RepositoryAssets {
     param (
         [string]$repoName,
         [string]$repoUrl
@@ -13,9 +14,14 @@ function Download-RepositoryAssets {
         $downloadUrl = $_.browser_download_url
         $assetName = $_.name
 
-        Write-Host "Downloading asset: $assetName from: $downloadUrl" -ForegroundColor Cyan
+        $verboseMessage = "Downloading asset: $assetName from: $downloadUrl"
+        Write-Verbose $verboseMessage
 
         $webClient.DownloadFile($downloadUrl, $assetName)
+
+        if ($PSCmdlet.MyInvocation.BoundParameters['Verbose']) {
+            Write-Host $verboseMessage -ForegroundColor Cyan
+        }
     }
 
     $webClient.Dispose()
