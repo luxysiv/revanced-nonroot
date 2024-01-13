@@ -7,12 +7,11 @@ function Download-RepositoryAssets {
     $repoApiUrl = "https://api.github.com/repos/$repoUrl/releases/latest"
     $response = Invoke-RestMethod -Uri $repoApiUrl
 
-    $assetUrls = $response.assets | Where-Object { $_.name -match $repoName } | ForEach-Object { "$($_.browser_download_url) $($_.name)" }
-
-    foreach ($url in $assetUrls) {
-        $urlParts = $url -split ' '
-        Write-Host "Downloading asset: $($urlParts[1]) from: $($urlParts[0])" -ForegroundColor Cyan
-        Invoke-WebRequest -Uri $urlParts[0] -OutFile $urlParts[1] -UseBasicParsing -Verbose
+    $assetUrls = $response.assets | Where-Object { $_.name -match $repoName } | ForEach-Object {
+        $downloadUrl = $_.browser_download_url
+        $assetName = $_.name
+        Write-Host "Downloading asset: $assetName from: $downloadUrl" -ForegroundColor Cyan
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $assetName -UseBasicParsing -Verbose
     }
 }
 
