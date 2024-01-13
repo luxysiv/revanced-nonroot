@@ -1,5 +1,4 @@
 function Download-RepositoryAssets {
-function Download-RepositoryAssets {
     param (
         [string]$repoName,
         [string]$repoUrl
