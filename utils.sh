@@ -1,20 +1,29 @@
 #!/bin/bash
 
 req() {
-    wget -nv -O "$2" --header="Authorization: token $accessToken" "$1"
+    local url=$1
+    local output=$2
+    local includeAuthorization=$3
+
+    local headers=()
+    if [ "$includeAuthorization" == "true" ]; then
+        headers+=("--header=Authorization: token $accessToken")
+    fi
+
+    wget -nv -O "$output" "${headers[@]}" "$url"
 }
 
 download_repository_assets() {
     local repoName=$1
     local repoUrl=$2
     local repoApiUrl="https://api.github.com/repos/$repoUrl/releases/latest"
-    local response=$(req "$repoApiUrl" - 2>/dev/null)
+    local response=$(req "$repoApiUrl" - true 2>/dev/null)
 
     local assetUrls=$(echo "$response" | jq -r --arg repoName "$repoName" '.assets[] | select(.name | contains($repoName)) | .browser_download_url, .name')
 
     while read -r downloadUrl && read -r assetName; do
         color_green "Downloading asset: $assetName from: $downloadUrl"
-        req "$downloadUrl" "$assetName"
+        req "$downloadUrl" "$assetName" true
     done <<< "$assetUrls"
 }
 
@@ -24,7 +33,7 @@ download_youtube_apk() {
     local youtubeDownloadUrl="$(echo $ytUrl | sed 's/0$/1/')"
     local assetName="youtube-v$version.apk"
     color_green "Downloading YouTube APK from: $youtubeDownloadUrl"
-    req "$youtubeDownloadUrl" "$assetName"
+    req "$youtubeDownloadUrl" "$assetName" true
 }
 
 apply_patches() {
@@ -100,6 +109,7 @@ create_github_release() {
     local accessToken="$1"
     local repoOwner="$2"
     local repoName="$3"
+    local includeAuthorization="$4"
 
     local tagName=$(date +"%d-%m-%Y")
     local patchFilePath=$(find . -type f -name "revanced-patches*.jar")
@@ -123,23 +133,23 @@ EOF
     fi
 
     # Check if the release with the same tag already exists
-    local existingRelease=$(wget -qO- --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName")
+    local existingRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName" - false)
 
     if [ -n "$existingRelease" ]; then
         local existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
 
         # If the release exists, delete it
-        wget -q --method=DELETE --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" -O /dev/null
+        req "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" - true --method=DELETE > /dev/null
         color_green "Existing release deleted with tag $tagName."
     fi
 
     # Create a new release
-    local newRelease=$(wget -qO- --post-data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
+    local newRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases" "$releaseData" true --post-data="$releaseData" --header="Content-Type: application/json")
     local releaseId=$(echo "$newRelease" | jq -r ".id")
 
     # Upload APK file
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
-    wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
+    req "$uploadUrlApk" "$apkFilePath" true --header="Content-Type: application/zip"
 
     color_green "GitHub Release created with ID $releaseId."
 }
