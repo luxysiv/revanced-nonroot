@@ -107,35 +107,39 @@ create_github_release() {
     local patchFileName=$(echo "$patchFilePath" | basename)
     local apkFileName=$(echo "$apkFilePath" | basename).apk
 
+    local releaseData=$(cat <<EOF
+{
+    "tag_name": "$tagName",
+    "target_commitish": "main",
+    "name": "Release $tagName",
+    "body": "$patchFileName"
+}
+EOF
+)
+
     # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
         exit
     fi
 
     # Check if the release with the same tag already exists
-    local existingRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName" -)
+    local existingRelease=$(wget -qO- --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName")
 
     if [ -n "$existingRelease" ]; then
         local existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
 
         # If the release exists, delete it
-        req "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" --method=DELETE - -O /dev/null
+        wget -q --method=DELETE --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" -O /dev/null
         color_green "Existing release deleted with tag $tagName."
     fi
 
-    local releaseData='{
-        "tag_name": "'"$tagName"'",
-        "target_commitish": "main",
-        "name": "Release '"$tagName"'",
-        "body": "'"$patchFileName"'"
-    }'
-
-    local createReleaseResponse=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases" --header="Content-Type: application/json" --data "$releaseData" -)
-    local releaseId=$(echo "$createReleaseResponse" | jq -r ".id")
+    # Create a new release
+    local newRelease=$(wget -qO- --post-data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
+    local releaseId=$(echo "$newRelease" | jq -r ".id")
 
     # Upload APK file
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
-    req "$uploadUrlApk" --header="Content-Type: application/zip" --upload-file "$apkFilePath" -O /dev/null
+    wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
 
     color_green "GitHub Release created with ID $releaseId."
 }
