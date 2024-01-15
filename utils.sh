@@ -139,7 +139,7 @@ EOF
 
     # Upload APK file
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
-    wget --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
+    wget --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O- > /dev/null "$uploadUrlApk"
 
     color_green "GitHub Release created with ID $releaseId."
 }
