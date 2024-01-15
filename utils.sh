@@ -107,15 +107,12 @@ create_github_release() {
     local patchFileName=$(echo "$patchFilePath" | basename)
     local apkFileName=$(echo "$apkFilePath" | basename).apk
 
-    local releaseData=$(cat <<EOF
-{
-    "tag_name": "$tagName",
-    "target_commitish": "main",
-    "name": "Release $tagName",
-    "body": "$patchFileName"
-}
-EOF
-)
+    local releaseData='{
+        "tag_name": "'"$tagName"'",
+        "target_commitish": "main",
+        "name": "Release '"$tagName"'",
+        "body": "'"$patchFileName"'"
+    }'
 
     # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
