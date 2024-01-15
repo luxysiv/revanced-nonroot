@@ -34,7 +34,7 @@ if [ -z "$scriptRepoBody" ]; then
     sign_patched_apk "$version"
     update_version_file "$version"
     upload_to_github
-    create_github_release "$accessToken" "$repoOwner" "$repoName"
+    create_github_release "$accessToken" "$repoOwner" "$repoName" true
     exit 0
 fi
 
@@ -45,7 +45,7 @@ if check_release_body "$scriptRepoBody" "$downloadedPatchFileName"; then
     sign_patched_apk "$version"
     update_version_file "$version"
     upload_to_github
-    create_github_release "$accessToken" "$repoOwner" "$repoName"
+    create_github_release "$accessToken" "$repoOwner" "$repoName" true
 else
     color_red "Skipping because patched."
 fi
