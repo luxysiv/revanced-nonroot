@@ -4,16 +4,18 @@ req() {
     local url=$1
     local output=$2
     local accessToken=$3
+    local method=$4
+    local data=$5
 
     if [ -z "$output" ]; then
         # If output is not specified, it means it's an upload request
-        local response=$(curl -s --request POST --url "https://uploads.github.com/repos/owner/repo/releases/releases-id/assets?name=$(basename "$url")" --header "Authorization: token $accessToken" --header "Content-Type: application/octet-stream" --data-binary "@$url")
+        local response=$(curl -s --request "$method" --url "$url" --header "Authorization: token $accessToken" --header "Content-Type: application/octet-stream" --data-binary "@$data")
         local status=$(echo "$response" | jq -r '.id // empty')
 
         if [ -n "$status" ]; then
-            color_green "Upload successful: $(basename "$url")"
+            color_green "Upload successful: $(basename "$data")"
         else
-            color_red "Failed to upload: $(basename "$url")"
+            color_red "Failed to upload: $(basename "$data")"
         fi
     else
         # Otherwise, it's a download request
