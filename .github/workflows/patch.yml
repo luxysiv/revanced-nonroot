@@ -20,8 +20,7 @@ jobs:
       uses: actions/checkout@main
 
     - name: Patch Revanced
-      shell: pwsh
-      run: .\build.ps1
+      run: bash patch.sh
              
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@v2
