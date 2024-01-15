@@ -145,7 +145,7 @@ EOF
     fi
 
     # Create a new release
-    local newRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases" "$releaseData" true --post-data="$releaseData" --header="Content-Type: application/json")
+    local newRelease=$(req "$releasesUrl" "$releaseData" true --post-data="$releaseData" --header="Content-Type: application/json")
     local releaseId=$(echo "$newRelease" | jq -r ".id")
 
     # Upload APK file
