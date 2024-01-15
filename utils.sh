@@ -130,7 +130,7 @@ EOF
 
         # If the release exists, delete it
         wget -q --method=DELETE --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" -O /dev/null
-        echo "Existing release deleted with tag $tagName."
+        color_green "Existing release deleted with tag $tagName."
     fi
 
     # Create a new release
@@ -141,7 +141,7 @@ EOF
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
     wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
 
-    echo "GitHub Release created with ID $releaseId."
+    color_green "GitHub Release created with ID $releaseId."
 }
 
 check_release_body() {
