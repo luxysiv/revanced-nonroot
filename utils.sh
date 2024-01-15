@@ -1,32 +1,7 @@
 #!/bin/bash
 
 req() {
-    local url=$1
-    local output=$2
-    local accessToken=$3
-    local method=$4
-    local data=$5
-
-    if [ -z "$output" ]; then
-        # If output is not specified, it means it's an upload request
-        local response=$(curl -s --request "$method" --url "$url" --header "Authorization: token $accessToken" --header "Content-Type: application/octet-stream" --data-binary "@$data")
-        local status=$(echo "$response" | jq -r '.id // empty')
-
-        if [ -n "$status" ]; then
-            color_green "Upload successful: $(basename "$data")"
-        else
-            color_red "Failed to upload: $(basename "$data")"
-        fi
-    else
-        # Otherwise, it's a download request
-        local response=$(wget -nv -O "$output" --header="Authorization: token $accessToken" "$url" 2>/dev/null)
-
-        if [ $? -eq 0 ]; then
-            color_green "Downloaded successfully: $output"
-        else
-            color_red "Failed to download: $output"
-        fi
-    fi
+    wget -nv -O "$2" --header="Authorization: token $accessToken" "$1"
 }
 
 download_repository_assets() {
@@ -148,24 +123,24 @@ EOF
     fi
 
     # Check if the release with the same tag already exists
-    local existingRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName" "-" "$accessToken")
+    local existingRelease=$(wget -qO- --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName")
 
     if [ -n "$existingRelease" ]; then
         local existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
 
         # If the release exists, delete it
-        req "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" "-" "$accessToken" "DELETE"
+        wget -q --method=DELETE --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" -O /dev/null
         color_green "Existing release deleted with tag $tagName."
     fi
 
     # Create a new release
-    local newRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases" "-" "$accessToken" "POST" "$releaseData")
+    local newRelease=$(wget -qO- --post-data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
     local releaseId=$(echo "$newRelease" | jq -r ".id")
 
     # Upload APK file
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
-    req "$uploadUrlApk" "$apkFilePath" "$accessToken"
-    
+    wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
+
     color_green "GitHub Release created with ID $releaseId."
 }
 
