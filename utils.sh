@@ -125,12 +125,12 @@ EOF
     # Check if the release with the same tag already exists
     local existingRelease=$(wget -qO- --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName")
 
-    if [ -z "$existingRelease" ]; then
+    if [ -n "$existingRelease" ]; then
         local existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
 
         # If the release exists, delete it
         wget -q --method=DELETE --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" -O /dev/null
-        color_green "Existing release deleted with tag $tagName."
+        echo "Existing release deleted with tag $tagName."
     fi
 
     # Create a new release
@@ -139,9 +139,9 @@ EOF
 
     # Upload APK file
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
-    wget --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O- > /dev/null "$uploadUrlApk"
+    wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
 
-    color_green "GitHub Release created with ID $releaseId."
+    echo "GitHub Release created with ID $releaseId."
 }
 
 check_release_body() {
