@@ -107,13 +107,6 @@ create_github_release() {
     local patchFileName=$(echo "$patchFilePath" | basename)
     local apkFileName=$(echo "$apkFilePath" | basename).apk
 
-    local releaseData='{
-        "tag_name": "'"$tagName"'",
-        "target_commitish": "main",
-        "name": "Release '"$tagName"'",
-        "body": "'"$patchFileName"'"
-    }'
-
     # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
         exit
@@ -130,9 +123,15 @@ create_github_release() {
         color_green "Existing release deleted with tag $tagName."
     fi
 
-    # Create a new release
-    local newRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases" --header="Content-Type: application/json" --data "$releaseData" -)
-    local releaseId=$(echo "$newRelease" | jq -r ".id")
+    local releaseData='{
+        "tag_name": "'"$tagName"'",
+        "target_commitish": "main",
+        "name": "Release '"$tagName"'",
+        "body": "'"$patchFileName"'"
+    }'
+
+    local createReleaseResponse=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases" --header="Content-Type: application/json" --data "$releaseData" -)
+    local releaseId=$(echo "$createReleaseResponse" | jq -r ".id")
 
     # Upload APK file
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
