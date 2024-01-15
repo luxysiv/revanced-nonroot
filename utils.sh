@@ -10,8 +10,8 @@ req() {
         headers+=("--header=Authorization: token $accessToken")
     fi
 
-    echo "Debug: wget -nv -O $output ${headers[@]} $url"
     wget -nv -O "$output" "${headers[@]}" "$url"
+    echo "Debug: wget -nv -O $output ${headers[@]} $url"
 }
 
 download_repository_assets() {
