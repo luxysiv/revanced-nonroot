@@ -123,23 +123,23 @@ EOF
     fi
 
     # Check if the release with the same tag already exists
-    local existingRelease=$(wget -qO- --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName")
+    local existingRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName" -)
 
     if [ -n "$existingRelease" ]; then
         local existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
 
         # If the release exists, delete it
-        wget -q --method=DELETE --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" -O /dev/null
+        req "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" --method=DELETE - -O /dev/null
         color_green "Existing release deleted with tag $tagName."
     fi
 
     # Create a new release
-    local newRelease=$(wget -qO- --post-data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
+    local newRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases" --post-data="$releaseData" --header="Content-Type: application/json" -)
     local releaseId=$(echo "$newRelease" | jq -r ".id")
 
     # Upload APK file
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
-    wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
+    req "$uploadUrlApk" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null
 
     color_green "GitHub Release created with ID $releaseId."
 }
