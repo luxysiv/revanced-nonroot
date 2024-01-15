@@ -109,6 +109,7 @@ create_github_release() {
 
     # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
+        color_red "APK file not found. Exiting."
         exit
     fi
 
@@ -130,7 +131,7 @@ create_github_release() {
         "name": "Release '"$tagName"'",
         "body": "'"$patchFileName"'"
     }'
-    local newRelease=$(wget -qO- --data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
+    local newRelease=$(wget -qO- --post-data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
     local releaseId=$(echo "$newRelease" | jq -r ".id")
 
     # Upload APK file
