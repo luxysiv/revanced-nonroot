@@ -131,12 +131,12 @@ create_github_release() {
     fi
 
     # Create a new release
-    local newRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases" --post-data="$releaseData" --header="Content-Type: application/json" -)
+    local newRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases" --header="Content-Type: application/json" --data "$releaseData" -)
     local releaseId=$(echo "$newRelease" | jq -r ".id")
 
     # Upload APK file
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
-    req "$uploadUrlApk" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null
+    req "$uploadUrlApk" --header="Content-Type: application/zip" --upload-file "$apkFilePath" -O /dev/null
 
     color_green "GitHub Release created with ID $releaseId."
 }
