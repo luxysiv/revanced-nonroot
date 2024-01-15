@@ -107,16 +107,6 @@ create_github_release() {
     local patchFileName=$(echo "$patchFilePath" | basename)
     local apkFileName=$(echo "$apkFilePath" | basename).apk
 
-    local releaseData=$(cat <<EOF
-{
-    "tag_name": "$tagName",
-    "target_commitish": "main",
-    "name": "Release $tagName",
-    "body": "$patchFileName"
-}
-EOF
-)
-
     # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
         exit
@@ -134,7 +124,13 @@ EOF
     fi
 
     # Create a new release
-    local newRelease=$(wget -qO- --post-data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
+    local releaseData='{
+        "tag_name": "'"$tagName"'",
+        "target_commitish": "main",
+        "name": "Release '"$tagName"'",
+        "body": "'"$patchFileName"'"
+    }'
+    local newRelease=$(wget -qO- --data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
     local releaseId=$(echo "$newRelease" | jq -r ".id")
 
     # Upload APK file
