@@ -24,7 +24,7 @@ download_repository_assets() {
 download_youtube_apk() {
     package_info=$(java -jar revanced-cli*.jar list-versions -f com.google.android.youtube revanced-patches*.jar)    
     version=$(echo "$package_info" | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p')
-    ./dl_yt/$version/dl_yt
+    chmod +x dl_yt && ./dl_yt $version
 }
 
 apply_patches() {
