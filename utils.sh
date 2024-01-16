@@ -1,5 +1,9 @@
 #!/bin/bash
 
+basename() {
+    sed 's/.*\///' | sed 's/\.[^.]*$//'
+}
+
 req() {
     wget -nv -O "$2" --header="Authorization: token $accessToken" "$1"
 }
@@ -13,7 +17,6 @@ download_repository_assets() {
     local assetUrls=$(echo "$response" | jq -r --arg repoName "$repoName" '.assets[] | select(.name | contains($repoName)) | .browser_download_url, .name')
 
     while read -r downloadUrl && read -r assetName; do
-        color_green "Downloading asset: $assetName from: $downloadUrl"
         req "$downloadUrl" "$assetName"
     done <<< "$assetUrls"
 }
@@ -40,22 +43,18 @@ apply_patches() {
     done
 
     # Apply patches using Revanced tools
-    
-    color_green "Patching..."
     java -jar revanced-cli*.jar patch \
         --merge revanced-integrations*.apk \
         --patch-bundle revanced-patches*.jar \
         "${excludePatches[@]}" "${includePatches[@]}" \
         --out "patched-youtube-v$version.apk" \
         "youtube-v$version.apk"
-    color_green "Done"
 }
 
 sign_patched_apk() {
     version=$1
     
     # Sign the patched APK
-    color_green "Sign APK"
     apksigner=$(find $ANDROID_SDK_ROOT/build-tools -name apksigner -type f | sort -r | head -n 1)
     $apksigner sign --ks public.jks \
         --ks-key-alias public \
@@ -63,7 +62,6 @@ sign_patched_apk() {
         --key-pass pass:public \
         --in "patched-youtube-v$version.apk" \
         --out "youtube-revanced-v$version.apk"
-    color_green "Done"
 }
 
 create_github_release() {
@@ -79,7 +77,6 @@ create_github_release() {
 
     # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
-        color_red "APK file not found. Exiting."
         exit
     fi
 
@@ -91,7 +88,6 @@ create_github_release() {
 
         # If the release exists, delete it
         wget -q --method=DELETE --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" -O /dev/null
-        color_green "Existing release deleted with tag $tagName."
     fi
 
     # Create a new release
@@ -107,8 +103,6 @@ create_github_release() {
     # Upload APK file
     local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
     wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
-
-    color_green "GitHub Release created with ID $releaseId."
 }
 
 check_release_body() {
@@ -121,16 +115,4 @@ check_release_body() {
     else
         return 1
     fi
-}
-
-color_green() {
-    echo -e "\e[92m[+] $1\e[0m"
-}
-
-color_red() {
-    echo -e "\e[91m[+] $1\e[0m"
-}
-
-basename() {
-    sed 's/.*\///' | sed 's/\.[^.]*$//'
 }
