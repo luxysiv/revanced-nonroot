@@ -43,5 +43,5 @@ if check_release_body "$scriptRepoBody" "$downloadedPatchFileName"; then
     sign_patched_apk "$version"
     create_github_release "$accessToken" "$repoOwner" "$repoName"
 else
-    exit 0
+    echo "Skipping because patched"
 fi
