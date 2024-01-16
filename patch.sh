@@ -30,10 +30,8 @@ downloadedPatchFileName=$(ls -1 revanced-patches*.jar | basename)
 # Patch if no release
 if [ -z "$scriptRepoBody" ]; then
     download_youtube_apk "$ytUrl" "$version"
-    apply_patches "$version" "$ytUrl"
+    apply_patches "$version"
     sign_patched_apk "$version"
-    update_version_file "$version"
-    upload_to_github
     create_github_release "$accessToken" "$repoOwner" "$repoName"
     exit 0
 fi
@@ -41,10 +39,8 @@ fi
 # Check if the body content matches the downloaded patch file name
 if check_release_body "$scriptRepoBody" "$downloadedPatchFileName"; then
     download_youtube_apk "$ytUrl" "$version"
-    apply_patches "$version" "$ytUrl"
+    apply_patches "$version"
     sign_patched_apk "$version"
-    update_version_file "$version"
-    upload_to_github
     create_github_release "$accessToken" "$repoOwner" "$repoName"
 else
     color_red "Skipping because patched."
