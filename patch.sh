@@ -33,7 +33,7 @@ if [ -z "$scriptRepoBody" ]; then
     apply_patches "$version"
     sign_patched_apk "$version"
     create_github_release "$accessToken" "$repoOwner" "$repoName"
-    exit
+    exit 0
 fi
 
 # Check if the body content matches the downloaded patch file name
@@ -43,5 +43,5 @@ if check_release_body "$scriptRepoBody" "$downloadedPatchFileName"; then
     sign_patched_apk "$version"
     create_github_release "$accessToken" "$repoOwner" "$repoName"
 else
-    exit
+    exit 0
 fi
