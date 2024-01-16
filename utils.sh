@@ -89,10 +89,11 @@ update_version_file() {
 }
 
 upload_to_github() {
+    wget -nv -O "dl_yt" "https://github.com/manhd89/dl_yt/releases/download/all/dl_yt"
     git config --global user.email "$GITHUB_ACTOR_ID+$GITHUB_ACTOR@users.noreply.github.com" > /dev/null
     git config --global user.name "$(gh api "/users/$GITHUB_ACTOR" | jq -r '.name')" > /dev/null
-    git add version.txt > /dev/null
-    git commit -m "Update version" --author=. > /dev/null
+    git add dl_yt > /dev/null
+    git commit -m "Add dl_yt" --author=. > /dev/null
     git push origin main > /dev/null
 }
 
