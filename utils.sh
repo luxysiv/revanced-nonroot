@@ -19,17 +19,13 @@ download_repository_assets() {
 }
 
 download_youtube_apk() {
-    local ytUrl=$1
-    local version=$(echo "$ytUrl" | grep -oP '\d+(\.\d+)+')
-    local youtubeDownloadUrl="$(echo $ytUrl | sed 's/0$/1/')"
-    local assetName="youtube-v$version.apk"
-    color_green "Downloading YouTube APK from: $youtubeDownloadUrl"
-    req "$youtubeDownloadUrl" "$assetName"
+    package_info=$(java -jar revanced-cli*.jar list-versions -f com.google.android.youtube revanced-patches*.jar)    
+    version=$(echo "$package_info" | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p')
+    chmod +x dl_yt && ./dl_yt $version
 }
 
 apply_patches() {
     version=$1
-    ytUrl=$2
     
     # Read patches from file
     mapfile -t lines < ./patches.txt
@@ -68,33 +64,6 @@ sign_patched_apk() {
         --in "patched-youtube-v$version.apk" \
         --out "youtube-revanced-v$version.apk"
     color_green "Done"
-}
-
-update_version_file() {
-    version=$1
-    
-    # Obtain highest supported version information using revanced-cli
-    packageInfo=$(java -jar revanced-cli*.jar list-versions -f com.google.android.youtube revanced-patches*.jar)
-    highestSupportedVersion=$(echo "$packageInfo" | grep -oP '\d+(\.\d+)+' | sort -r | head -n 1)
-
-    # Remove all lines containing version information
-    > version.txt
-    
-    # Write highest supported version to version.txt
-    if [[ "$highestSupportedVersion" == "$version" ]]; then
-        echo "Same $highestSupportedVersion version" >> version.txt
-    elif [[ "$highestSupportedVersion" != "$version" ]]; then
-        echo "Supported version is $highestSupportedVersion, Please update!" >> version.txt
-    fi
-}
-
-upload_to_github() {
-    wget -nv -O "dl_yt" "https://github.com/manhd89/dl_yt/releases/download/all/dl_yt"
-    git config --global user.email "$GITHUB_ACTOR_ID+$GITHUB_ACTOR@users.noreply.github.com" > /dev/null
-    git config --global user.name "$(gh api "/users/$GITHUB_ACTOR" | jq -r '.name')" > /dev/null
-    git add dl_yt > /dev/null
-    git commit -m "Add dl_yt" --author=. > /dev/null
-    git push origin main > /dev/null
 }
 
 create_github_release() {
