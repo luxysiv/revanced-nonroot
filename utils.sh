@@ -41,8 +41,6 @@ apply_patches() {
             [[ ${line:0:1} == "-" ]] && excludePatches+=("--exclude" "$patch_name")
         fi
     done
-
-    java -jar revanced-cli*.jar utility
     
     # Apply patches using Revanced tools
     java -jar revanced-cli*.jar patch \
