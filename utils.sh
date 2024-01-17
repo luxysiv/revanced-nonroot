@@ -42,6 +42,8 @@ apply_patches() {
         fi
     done
 
+    java -jar revanced-cli*.jar utility
+    
     # Apply patches using Revanced tools
     java -jar revanced-cli*.jar patch \
         --merge revanced-integrations*.apk \
