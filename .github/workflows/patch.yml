@@ -19,8 +19,16 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@main
 
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11.3
+
+    - name: Install Dependencies
+      run: pip install -r requirements.txt
+
     - name: Patch Revanced
-      run: bash patch.sh
+      run: python -m src
              
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@v2
