@@ -1,13 +1,13 @@
-
 import os
-import requests
+import glob
 from datetime import datetime
+import requests
 
 def create_github_release(access_token, repo_owner, repo_name):
     tag_name = datetime.now().strftime("%d-%m-%Y")
     
-    patch_file_path = next((f for f in os.listdir('.') if f.startswith('revanced-patches') and f.endswith('.jar')), None)
-    apk_file_path = next((f for f in os.listdir('.') if f.startswith('youtube-revanced') and f.endswith('.apk')), None)
+    patch_file_path = next((f for f in glob.glob('revanced-patches*.jar') if os.path.isfile(f)), None)
+    apk_file_path = next((f for f in glob.glob('youtube-revanced*.apk') if os.path.isfile(f)), None)
 
     # Only release with APK file
     if not apk_file_path:
@@ -44,9 +44,10 @@ def create_github_release(access_token, repo_owner, repo_name):
 
     # Upload APK file
     upload_url_apk = f"https://uploads.github.com/repos/{repo_owner}/{repo_name}/releases/{release_id}/assets?name={apk_file_path}"
-    with open(apk_file_path, 'rb') as apk_file:
-        requests.post(
-            upload_url_apk,
-            headers={"Authorization": f"token {access_token}", "Content-Type": "application/zip"},
-            files={"file": apk_file}
-        )
+    apk_file_content = open(apk_file_path, 'rb').read()
+
+    response = requests.post(
+        upload_url_apk,
+        headers={"Authorization": f"token {access_token}", "Content-Type": "application/zip"},
+        data=apk_file_content
+    )
