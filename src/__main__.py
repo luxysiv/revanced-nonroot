@@ -63,6 +63,9 @@ def run_build():
             logging.error("An error occurred while running the Java program")
             sys.exit(1)
 
+        with open('./etc/outname.txt', 'r') as file:
+            apk_signed_name = file.read().strip()
+        
         signing_process = subprocess.Popen(
             [
                 max(glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')), key=os.path.getctime),
@@ -73,7 +76,7 @@ def run_build():
                 '--key-pass', 'pass:public',
                 '--ks-key-alias', 'public',
                 '--in', f'youtube-patch-v{downloader.version}.apk',
-                '--out', f'youtube-revanced-v{downloader.version}.apk'
+                '--out', f'{apk_signed_name}-v{downloader.version}.apk'
             ],
             stdout=subprocess.PIPE,
         )
