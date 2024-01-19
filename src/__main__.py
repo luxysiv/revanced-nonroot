@@ -73,7 +73,7 @@ def run_build():
                 '--key-pass', 'pass:public',
                 '--ks-key-alias', 'public',
                 '--in', f'youtube-patch-v{downloader.version}.apk',
-                '--out', f'youtube-revanced-extended-v{downloader.version}.apk'
+                '--out', f'youtube-revanced-v{downloader.version}.apk'
             ],
             stdout=subprocess.PIPE,
         )
