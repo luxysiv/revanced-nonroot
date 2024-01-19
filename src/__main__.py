@@ -34,7 +34,7 @@ def run_build():
                     include_patches.append("--include")
                     include_patches.append(line[1:].strip())
 
-        process = subprocess.Popen(
+        patch_process = subprocess.Popen(
             [
                 "java",
                 "-jar",
@@ -52,31 +52,41 @@ def run_build():
             ],
             stdout=subprocess.PIPE,
         )
-    
-        logging.info("Starting patch YouTube...")
 
-        for line in iter(process.stdout.readline, b''):
+        for line in iter(patch_process.stdout.readline, b''):
             logging.info(line.decode("utf-8").strip())
 
-        logging.info("Done")
+        patch_process.stdout.close()
+        patch_return_code = patch_process.wait()
 
-        process.stdout.close()
-        return_code = process.wait()
-
-        if return_code != 0:
+        if patch_return_code != 0:
             logging.error("An error occurred while running the Java program")
             sys.exit(1)
 
-        subprocess.run([
-            max(glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')), key=os.path.getctime),
-            'sign',
-            '--ks', './etc/public.jks',
-            '--ks-pass', 'pass:public',
-            '--key-pass', 'pass:public',
-            '--ks-key-alias', 'public',
-            '--in', f'youtube-patch-v{downloader.version}.apk',
-            '--out', f'youtube-revanced-v{downloader.version}.apk'
-        ])
+        signing_process = subprocess.Popen(
+            [
+                max(glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')), key=os.path.getctime),
+                'sign',
+                '--verbose',
+                '--ks', './etc/public.jks',
+                '--ks-pass', 'pass:public',
+                '--key-pass', 'pass:public',
+                '--ks-key-alias', 'public',
+                '--in', f'youtube-patch-v{downloader.version}.apk',
+                '--out', f'youtube-revanced-extended-v{downloader.version}.apk'
+            ],
+            stdout=subprocess.PIPE,
+        )
+
+        for line in iter(signing_process.stdout.readline, b''):
+            logging.info(line.decode("utf-8").strip())
+
+        signing_process.stdout.close()
+        signing_return_code = signing_process.wait()
+
+        if signing_return_code != 0:
+            logging.error("An error occurred while signing the APK")
+            sys.exit(1)
     
         release.create_github_release(github_access_token, repository_owner, repository_name)
     else:
