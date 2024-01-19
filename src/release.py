@@ -48,6 +48,6 @@ def create_github_release(access_token, repo_owner, repo_name):
 
     response = requests.post(
         upload_url_apk,
-        headers={"Authorization": f"token {access_token}", "Content-Type": "application/zip"},
+        headers={"Authorization": f"token {access_token}", "Content-Type": "application/vnd.android.package-archive"},
         data=apk_file_content
     )
