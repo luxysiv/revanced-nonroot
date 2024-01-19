@@ -12,7 +12,7 @@ session.headers.update({
 })
 
 # Logging Level
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 formatter = ColoredLevelFormatter("%(asctime)s %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
 console = logging.StreamHandler()
 console.setFormatter(ColoredLevelFormatter("%(asctime)s %(message)s", datefmt='%Y-%m-%d %H:%M:%S'))
