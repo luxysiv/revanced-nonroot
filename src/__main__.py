@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import glob
 import logging
 import subprocess
@@ -63,8 +64,10 @@ def run_build():
             logging.error("An error occurred while running the Java program")
             sys.exit(1)
 
-        with open('./etc/outname.txt', 'r') as file:
-            apk_signed_name = file.read().strip()
+        with open('./etc/config.json', 'r') as json_file:
+            info = json.load(json_file)
+
+        name = info[0].get("name", "")
         
         signing_process = subprocess.Popen(
             [
@@ -76,7 +79,7 @@ def run_build():
                 '--key-pass', 'pass:public',
                 '--ks-key-alias', 'public',
                 '--in', f'youtube-patch-v{downloader.version}.apk',
-                '--out', f'{apk_signed_name}-v{downloader.version}.apk'
+                '--out', f'youtube-{name}-v{downloader.version}.apk'
             ],
             stdout=subprocess.PIPE,
         )

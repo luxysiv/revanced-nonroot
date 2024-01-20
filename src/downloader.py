@@ -33,10 +33,14 @@ def download_required():
     downloaded_files = {}
     base_url = "https://api.github.com/repos/{}/{}/releases/{}"
 
-    with open('./etc/repos.json', 'r') as json_file:
+    with open('./etc/config.json', 'r') as json_file:
         repos_info = json.load(json_file)
 
-    for repo_info in repos_info:       
+    for repo_info in repos_info: 
+        
+        if "name" in repo_info:
+            continue
+            
         try:
             url = base_url.format(repo_info['user'], repo_info['repo'], repo_info['tag'])
             assets = requests.get(url).json().get("assets", [])
@@ -81,4 +85,4 @@ def download_apk():
         filename = f"youtube-v{version}.apk"
         
         return download_resource(download_link, filename)
-        
+
