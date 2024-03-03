@@ -1,0 +1,10 @@
+{
+  "version": "0.0.1",
+  "name": "apkmirror-youtube-scraper",
+  "main": "main.mjs",
+  "description": "scrape the gnerated direct download link of youtube from ApkMirror", 
+  "dependencies": {
+    "jquery": "^3.6.1",
+    "jsdom": "^20.0.1"
+  }
+}
