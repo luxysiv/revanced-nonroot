@@ -123,23 +123,18 @@ check_release_body() {
 accessToken=$GITHUB_TOKEN
 repoName=$GITHUB_REPOSITORY_NAME
 repoOwner=$GITHUB_REPOSITORY_OWNER
-
 # Install dependencies
 npm --prefix ./youtube ci ./youtube > /dev/null 2>&1
 
-# Read repository info from config.json
-declare -A repositories
-while IFS= read -r line; do
-    user=$(echo "$line" | jq -r '.user')
-    repo=$(echo "$line" | jq -r '.repo')
-    name=$(echo "$line" | jq -r '.name')
-    repositories["$name"]="$user/$repo"
-done < ./etc/config.json
+declare -A repositories=(
+    ["revanced-cli"]="revanced/revanced-cli"
+    ["revanced-patches"]="revanced/revanced-patches"
+    ["revanced-integrations"]="revanced/revanced-integrations"
+)
 
 # Perform download_repository_assets
-for repoName in "${!repositories[@]}"; do
-    repoUrl="${repositories[$repoName]}"
-    download_repository_assets "$repoName" "$repoUrl"
+for repo in "${!repositories[@]}"; do
+    download_repository_assets "$repo" "${repositories[$repo]}"
 done
 
 # Get the body content of the script repository release
