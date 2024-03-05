@@ -4,10 +4,6 @@ basename() {
     sed 's/.*\///' | sed 's/\.[^.]*$//'
 }
 
-req() {
-    wget -nv -O "$2" --header="Authorization: token $accessToken" "$1"
-}
-
 download_assets() {
     local repoApiUrl="https://releases.revanced.app/tools"
     local response=$(wget -nv -O- 2>/dev/null "$repoApiUrl")
