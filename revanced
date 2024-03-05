@@ -15,7 +15,7 @@ download_assets() {
     local assetUrls=$(echo "$response" | jq -r '.tools[] | select(.name | test("revanced-(patches|cli).*jar$|revanced-integrations.*apk$")) | .browser_download_url, .name')
 
     while read -r downloadUrl && read -r assetName; do
-        wget -nv -O "$assetName""$downloadUrl" 
+        wget -nv -O "$assetName" "$downloadUrl" 
     done <<< "$assetUrls"
 }
 
