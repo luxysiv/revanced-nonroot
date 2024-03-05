@@ -5,7 +5,7 @@ basename() {
 }
 
 download_resources() {
-    local repoApiUrl="https://releases.revanced.app/tools"
+    local revancedApiUrl="https://releases.revanced.app/tools"
     local response=$(wget -nv -O- 2>/dev/null "$repoApiUrl")
 
     local assetUrls=$(echo "$response" | jq -r '.tools[] | select(.name | test("revanced-(patches|cli).*jar$|revanced-integrations.*apk$")) | .browser_download_url, .name')
