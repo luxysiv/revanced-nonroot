@@ -94,9 +94,6 @@ create_github_release() {
 }
 
 check_release_body() {
-    scriptRepoBody=$1
-    downloadedPatchFileName=$2
-
     # Compare body content with downloaded patch file name
     if [ "$scriptRepoBody" != "$downloadedPatchFileName" ]; then
         return 0
@@ -133,7 +130,7 @@ if [ -z "$scriptRepoBody" ]; then
 fi
 
 # Check if the body content matches the downloaded patch file name
-if check_release_body "$scriptRepoBody" "$downloadedPatchFileName"; then
+if check_release_body ; then
     download_youtube_apk
     apply_patches
     sign_patched_apk
