@@ -4,7 +4,7 @@ basename() {
     sed 's/.*\///' | sed 's/\.[^.]*$//'
 }
 
-download_assets() {
+download_resources() {
     local repoApiUrl="https://releases.revanced.app/tools"
     local response=$(wget -nv -O- 2>/dev/null "$repoApiUrl")
 
@@ -117,13 +117,12 @@ check_release_body() {
 accessToken=$GITHUB_TOKEN
 repoName=$GITHUB_REPOSITORY_NAME
 repoOwner=$GITHUB_REPOSITORY_OWNER
+
 # Install dependencies
 npm --prefix ./youtube ci ./youtube > /dev/null 2>&1
 
-
-
 # Perform download_repository_assets
-download_assets
+download_resources
 
 # Get the body content of the script repository release
 scriptRepoLatestRelease=$(wget -nv -O- 2>/dev/null "https://api.github.com/repos/$repoOwner/$repoName/releases/latest" --header="Authorization: token $accessToken" || true)
@@ -148,5 +147,5 @@ if check_release_body "$scriptRepoBody" "$downloadedPatchFileName"; then
     sign_patched_apk "$version"
     create_github_release "$accessToken" "$repoOwner" "$repoName"
 else
-    echo "Skipping because patched"
+    echo -e "\e[91mSkipping because patched\e[0m"
 fi
