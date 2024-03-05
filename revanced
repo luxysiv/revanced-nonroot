@@ -130,7 +130,7 @@ npm --prefix ./youtube ci ./youtube > /dev/null 2>&1
 download_assets
 
 # Get the body content of the script repository release
-scriptRepoLatestRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases/latest" - 2>/dev/null || true)
+scriptRepoLatestRelease=$(wget -nv -O- 2>/dev/null "https://api.github.com/repos/$repoOwner/$repoName/releases/latest" --header="Authorization: token $accessToken" || true)
 scriptRepoBody=$(echo "$scriptRepoLatestRelease" | jq -r '.body')
 
 # Get the downloaded patch file name
