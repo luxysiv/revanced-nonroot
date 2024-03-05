@@ -8,13 +8,11 @@ req() {
     wget -nv -O "$2" --header="Authorization: token $accessToken" "$1"
 }
 
-download_repository_assets() {
-    local repoName=$1
-    local repoUrl=$2
-    local repoApiUrl="https://api.github.com/repos/$repoUrl/releases/latest"
-    local response=$(req "$repoApiUrl" - 2>/dev/null)
+download_assets() {
+    local repoApiUrl="https://releases.revanced.app/tools"
+    local response=$(wget -nv -O- 2>/dev/null "$repoApiUrl")
 
-    local assetUrls=$(echo "$response" | jq -r --arg repoName "$repoName" '.assets[] | select(.name | contains($repoName)) | .browser_download_url, .name')
+    local assetUrls=$(echo "$response" | jq -r '.tools[] | select(.name | test("revanced-(patches|cli).*jar$|revanced-integrations.*apk$")) | .browser_download_url, .name')
 
     while read -r downloadUrl && read -r assetName; do
         req "$downloadUrl" "$assetName"
@@ -126,16 +124,10 @@ repoOwner=$GITHUB_REPOSITORY_OWNER
 # Install dependencies
 npm --prefix ./youtube ci ./youtube > /dev/null 2>&1
 
-declare -A repositories=(
-    ["revanced-cli"]="revanced/revanced-cli"
-    ["revanced-patches"]="revanced/revanced-patches"
-    ["revanced-integrations"]="revanced/revanced-integrations"
-)
+
 
 # Perform download_repository_assets
-for repo in "${!repositories[@]}"; do
-    download_repository_assets "$repo" "${repositories[$repo]}"
-done
+download_assets
 
 # Get the body content of the script repository release
 scriptRepoLatestRelease=$(req "https://api.github.com/repos/$repoOwner/$repoName/releases/latest" - 2>/dev/null || true)
