@@ -22,9 +22,7 @@ download_youtube_apk() {
     wget -nv -O "youtube-v$version.apk" -U "Mozilla/5.0" "$link"
 }
 
-apply_patches() {
-    version=$1
-    
+apply_patches() {    
     # Read patches from file
     mapfile -t lines < ./etc/patches.txt
 
@@ -46,9 +44,7 @@ apply_patches() {
         "youtube-v$version.apk"
 }
 
-sign_patched_apk() {
-    version=$1
-    
+sign_patched_apk() {    
     # Sign the patched APK
     apksigner=$(find $ANDROID_SDK_ROOT/build-tools -name apksigner -type f | sort -r | head -n 1)
     $apksigner sign --verbose \
@@ -61,10 +57,6 @@ sign_patched_apk() {
 }
 
 create_github_release() {
-    local accessToken="$1"
-    local repoOwner="$2"
-    local repoName="$3"
-
     local tagName=$(date +"%d-%m-%Y")
     local patchFilePath=$(find . -type f -name "revanced-patches*.jar")
     local apkFilePath=$(find . -type f -name "youtube-revanced*.apk")
@@ -133,19 +125,19 @@ downloadedPatchFileName=$(ls -1 revanced-patches*.jar | basename)
 
 # Patch if no release
 if [ -z "$scriptRepoBody" ]; then
-    download_youtube_apk "$ytUrl" "$version"
-    apply_patches "$version"
-    sign_patched_apk "$version"
-    create_github_release "$accessToken" "$repoOwner" "$repoName"
+    download_youtube_apk
+    apply_patches
+    sign_patched_apk 
+    create_github_release 
     exit 0
 fi
 
 # Check if the body content matches the downloaded patch file name
 if check_release_body "$scriptRepoBody" "$downloadedPatchFileName"; then
-    download_youtube_apk "$ytUrl" "$version"
-    apply_patches "$version"
-    sign_patched_apk "$version"
-    create_github_release "$accessToken" "$repoOwner" "$repoName"
+    download_youtube_apk
+    apply_patches
+    sign_patched_apk
+    create_github_release
 else
     echo -e "\e[91mSkipping because patched\e[0m"
 fi
