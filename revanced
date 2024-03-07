@@ -1,4 +1,9 @@
 #!/bin/bash
+UserAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
+
+req() {
+    wget -U "$UserAgent" -nv -O "$1" "$2"
+}
 
 basename() {
     sed 's/.*\///' | sed 's/\.[^.]*$//'
@@ -6,20 +11,23 @@ basename() {
 
 download_resources() {
     local revancedApiUrl="https://releases.revanced.app/tools"
-    local response=$(wget -nv -O- 2>/dev/null "$revancedApiUrl")
+    local response=$(req - 2>/dev/null "$revancedApiUrl")
 
     local assetUrls=$(echo "$response" | jq -r '.tools[] | select(.name | test("revanced-(patches|cli).*jar$|revanced-integrations.*apk$")) | .browser_download_url, .name')
 
     while read -r downloadUrl && read -r assetName; do
-        wget -nv -O "$assetName" "$downloadUrl" 
+        req "$assetName" "$downloadUrl" 
     done <<< "$assetUrls"
 }
 
 download_youtube_apk() {
     package_info=$(java -jar revanced-cli*.jar list-versions -f com.google.android.youtube revanced-patches*.jar)    
     version=$(echo "$package_info" | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p')
-    link=$(node ./youtube/main.mjs "$version")
-    wget -nv -O "youtube-v$version.apk" -U "Mozilla/5.0" "$link"
+    url="https://www.apkmirror.com/apk/google-inc/youtube/youtube-${version//./-}-release"
+    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' | pup -p --charset utf-8 'a.accent_color attr{href}')
+    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a:contains("Download APK") attr{href}')
+    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset UTF-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
+    req youtube-v$version.apk "https://www.apkmirror.com$url"
 }
 
 apply_patches() {    
@@ -106,9 +114,6 @@ check_release_body() {
 accessToken=$GITHUB_TOKEN
 repoName=$GITHUB_REPOSITORY_NAME
 repoOwner=$GITHUB_REPOSITORY_OWNER
-
-# Install dependencies
-npm --prefix ./youtube ci ./youtube > /dev/null 2>&1
 
 # Perform download_repository_assets
 download_resources
