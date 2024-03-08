@@ -24,7 +24,9 @@ download_youtube_apk() {
     package_info=$(java -jar revanced-cli*.jar list-versions -f com.google.android.youtube revanced-patches*.jar)    
     version=$(echo "$package_info" | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p')
     url="https://www.apkmirror.com/apk/google-inc/youtube/youtube-${version//./-}-release"
-    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' | pup -p --charset utf-8 'a.accent_color attr{href}')
+    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("universal"))')
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("nodpi")) a.accent_color attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a:contains("Download APK") attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
     url="https://www.apkmirror.com${url}" 
