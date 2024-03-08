@@ -27,7 +27,8 @@ download_youtube_apk() {
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' | pup -p --charset utf-8 'a.accent_color attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a:contains("Download APK") attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset UTF-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
-    req youtube-v$version.apk "https://www.apkmirror.com$url"
+    url="https://www.apkmirror.com${url}" 
+    req youtube-v$version.apk "$url"
 }
 
 apply_patches() {    
