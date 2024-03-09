@@ -21,10 +21,8 @@ jobs:
 
     - name: Install pup
       run: |
-        wget -nv https://github.com/ericchiang/pup/releases/download/v0.4.0/pup_v0.4.0_linux_amd64.zip
-        unzip pup_v0.4.0_linux_amd64.zip
-        sudo mv pup /usr/local/bin/
-        rm pup_v0.4.0_linux_amd64.zip
+        sudo mv ./etc/pup /usr/local/bin/
+        chmod +x /usr/local/bin/pup
 
     - name: Patch Revanced
       run: bash revanced.sh
