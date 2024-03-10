@@ -13,6 +13,10 @@ get_latest_version() {
     grep -Ev 'alpha|beta' | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p'
 }
 
+get_supported_version() {
+    jq -r --arg pkg_name "$1" '.. | objects | select(.name == "\($pkg_name)" and .versions != null) | .versions[-1]' | uniq
+}
+
 download_resources() {
     local revancedApiUrl="https://releases.revanced.app/tools"
     local response=$(req - 2>/dev/null "$revancedApiUrl")
@@ -25,8 +29,7 @@ download_resources() {
 }
 
 download_youtube_apk() {
-    json=$(req - "https://api.revanced.app/v2/patches/latest")
-    version=$(echo $json | jq -r '.. | objects | select(.name == "com.google.android.youtube" and .versions != null) | .versions[-1]' | uniq)
+    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "com.google.android.youtube")
     url="https://www.apkmirror.com/apk/google-inc/youtube/youtube-${version//./-}-release"
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' | pup -p --charset utf-8 'a.accent_color attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
