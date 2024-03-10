@@ -9,6 +9,10 @@ basename() {
     sed 's/.*\///' | sed 's/\.[^.]*$//'
 }
 
+get_latest_version() {
+    grep -Ev 'alpha|beta' | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p'
+}
+
 download_resources() {
     local revancedApiUrl="https://releases.revanced.app/tools"
     local response=$(req - 2>/dev/null "$revancedApiUrl")
@@ -32,10 +36,7 @@ download_youtube_apk() {
 }
 
 download_ytm_apk() {
-    versions=($(req - "https://www.apkmirror.com/uploads/?appcategory=youtube-music" | \
-        pup -p 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | \
-        grep -Ev 'alpha|beta'))    
-    version=$(echo "${versions[@]}" | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p')
+    version=$(req - "https://www.apkmirror.com/uploads/?appcategory=youtube-music" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)
     url="https://www.apkmirror.com/apk/google-inc/youtube-music/youtube-music-${version//./-}-release"
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
     url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("arm64-v8a"))')
