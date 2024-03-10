@@ -31,9 +31,25 @@ download_youtube_apk() {
     req youtube-v$version.apk "$url"
 }
 
-apply_patches() {    
+download_ytm_apk() {
+    versions=($(req - "https://www.apkmirror.com/uploads/?appcategory=youtube-music" | \
+        pup -p 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | \
+        grep -Ev 'alpha|beta'))    
+    version=$(echo "${versions[@]}" | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p')
+    url="https://www.apkmirror.com/apk/google-inc/youtube-music/youtube-music-${version//./-}-release"
+    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("arm64-v8a"))')
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("nodpi")) a.accent_color attr{href}')
+    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a:contains("Download APK") attr{href}')
+    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a:contains("here") attr{href}')
+    url="https://www.apkmirror.com${url}" 
+    req youtube-music-v$version.apk "$url"
+}
+
+apply_patches() {   
+    name="$1"
     # Read patches from file
-    mapfile -t lines < ./etc/patches.txt
+    mapfile -t lines < ./etc/$name-patches.txt
 
     # Process patches
     for line in "${lines[@]}"; do
@@ -49,11 +65,12 @@ apply_patches() {
         --merge revanced-integrations*.apk \
         --patch-bundle revanced-patches*.jar \
         "${excludePatches[@]}" "${includePatches[@]}" \
-        --out "patched-youtube-v$version.apk" \
-        "youtube-v$version.apk"
+        --out "patched-$name-v$version.apk" \
+        "$name-v$version.apk"
 }
 
-sign_patched_apk() {    
+sign_patched_apk() {   
+    name="$1"
     # Sign the patched APK
     apksigner=$(find $ANDROID_SDK_ROOT/build-tools -name apksigner -type f | sort -r | head -n 1)
     $apksigner sign --verbose \
@@ -61,14 +78,15 @@ sign_patched_apk() {
         --ks-key-alias public \
         --ks-pass pass:public \
         --key-pass pass:public \
-        --in "patched-youtube-v$version.apk" \
-        --out "youtube-revanced-v$version.apk"
+        --in "patched-$name-v$version.apk" \
+        --out "$name-revanced-v$version.apk"
 }
 
 create_github_release() {
+    name="$1"
     local tagName=$(date +"%d-%m-%Y")
     local patchFilePath=$(find . -type f -name "revanced-patches*.jar")
-    local apkFilePath=$(find . -type f -name "youtube-revanced*.apk")
+    local apkFilePath=$(find . -type f -name "$name-revanced*.apk")
     local patchFileName=$(echo "$patchFilePath" | basename)
     local apkFileName=$(echo "$apkFilePath" | basename).apk
 
@@ -83,23 +101,25 @@ create_github_release() {
     if [ -n "$existingRelease" ]; then
         local existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
 
-        # If the release exists, delete it
-        wget -q --method=DELETE --header="Authorization: token $accessToken" "https://api.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId" -O /dev/null
+        # Upload additional file to existing release
+        local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId/assets?name=$apkFileName"
+        wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
+
+    else
+        # Create a new release
+        local releaseData='{
+            "tag_name": "'"$tagName"'",
+            "target_commitish": "main",
+            "name": "Release '"$tagName"'",
+            "body": "'"$patchFileName"'"
+        }'
+        local newRelease=$(wget -qO- --post-data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
+        local releaseId=$(echo "$newRelease" | jq -r ".id")
+
+        # Upload APK file
+        local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
+        wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
     fi
-
-    # Create a new release
-    local releaseData='{
-        "tag_name": "'"$tagName"'",
-        "target_commitish": "main",
-        "name": "Release '"$tagName"'",
-        "body": "'"$patchFileName"'"
-    }'
-    local newRelease=$(wget -qO- --post-data="$releaseData" --header="Authorization: token $accessToken" --header="Content-Type: application/json" "https://api.github.com/repos/$repoOwner/$repoName/releases")
-    local releaseId=$(echo "$newRelease" | jq -r ".id")
-
-    # Upload APK file
-    local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
-    wget -q --header="Authorization: token $accessToken" --header="Content-Type: application/zip" --post-file="$apkFilePath" -O /dev/null "$uploadUrlApk"
 }
 
 check_release_body() {
@@ -129,18 +149,26 @@ downloadedPatchFileName=$(ls -1 revanced-patches*.jar | basename)
 # Patch if no release
 if [ -z "$scriptRepoBody" ]; then
     download_youtube_apk
-    apply_patches
-    sign_patched_apk 
-    create_github_release 
+    apply_patches "youtube"
+    sign_patched_apk "youtube"
+    create_github_release "youtube"
+    download_ytm_apk
+    apply_patches "youtube-music"
+    sign_patched_apk "youtube-music"
+    create_github_release "youtube-music"
     exit 0
 fi
 
 # Check if the body content matches the downloaded patch file name
 if check_release_body ; then
     download_youtube_apk
-    apply_patches
-    sign_patched_apk
-    create_github_release
+    apply_patches "youtube"
+    sign_patched_apk "youtube"
+    create_github_release "youtube"
+    download_ytm_apk
+    apply_patches "youtube-music"
+    sign_patched_apk "youtube-music"
+    create_github_release "youtube-music"
 else
     echo -e "\e[91mSkipping because patched\e[0m"
 fi
