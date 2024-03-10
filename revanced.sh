@@ -44,8 +44,8 @@ download_ytm_apk() {
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
     url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("arm64-v8a"))')
     url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("nodpi")) a.accent_color attr{href}')
-    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a:contains("Download APK") attr{href}')
-    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a:contains("here") attr{href}')
+    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
+    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
     url="https://www.apkmirror.com${url}" 
     req youtube-music-v$version.apk "$url"
 }
