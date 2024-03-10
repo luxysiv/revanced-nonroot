@@ -135,6 +135,18 @@ check_release_body() {
     fi
 }
 
+# Activity patches APK
+patch() {
+    download_youtube_apk
+    apply_patches "youtube"
+    sign_patched_apk "youtube"
+    create_github_release "youtube"
+    download_ytm_apk
+    apply_patches "youtube-music"
+    sign_patched_apk "youtube-music"
+    create_github_release "youtube-music"
+}
+
 # Main script 
 accessToken=$GITHUB_TOKEN
 repoName=$GITHUB_REPOSITORY_NAME
@@ -152,27 +164,13 @@ downloadedPatchFileName=$(ls -1 revanced-patches*.jar | basename)
 
 # Patch if no release
 if [ -z "$scriptRepoBody" ]; then
-    download_youtube_apk
-    apply_patches "youtube"
-    sign_patched_apk "youtube"
-    create_github_release "youtube"
-    download_ytm_apk
-    apply_patches "youtube-music"
-    sign_patched_apk "youtube-music"
-    create_github_release "youtube-music"
+    patch
     exit 0
 fi
 
 # Check if the body content matches the downloaded patch file name
 if check_release_body ; then
-    download_youtube_apk
-    apply_patches "youtube"
-    sign_patched_apk "youtube"
-    create_github_release "youtube"
-    download_ytm_apk
-    apply_patches "youtube-music"
-    sign_patched_apk "youtube-music"
-    create_github_release "youtube-music"
+    patch
 else
     echo -e "\e[91mSkipping because patched\e[0m"
 fi
