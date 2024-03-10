@@ -1,4 +1,4 @@
-**YouTube Revanced**
+**YouTube Revanced** & **YouTube Music Revanced**
 
 **Download page** (Take from latest release)
   - https://luxysiv.github.io/revanced-nonroot/
