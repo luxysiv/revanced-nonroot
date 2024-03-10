@@ -22,7 +22,7 @@ download_resources() {
 
 download_youtube_apk() {
     json=$(req - "https://api.revanced.app/v2/patches/latest")
-    version=$(echo $json | jq -r '.. | objects | select(.name == "com.google.android.youtube" and .versions != null) | .versions[-2]' | uniq)
+    version=$(echo $json | jq -r '.. | objects | select(.name == "com.google.android.youtube" and .versions != null) | .versions[-1]' | uniq)
     url="https://www.apkmirror.com/apk/google-inc/youtube/youtube-${version//./-}-release"
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' | pup -p --charset utf-8 'a.accent_color attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
