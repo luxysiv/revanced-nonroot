@@ -39,7 +39,8 @@ download_youtube_apk() {
 }
 
 download_ytm_apk() {
-    version=$(req - "https://www.apkmirror.com/uploads/?appcategory=youtube-music" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)
+    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "com.google.android.apps.youtube.music")
+    version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=youtube-music" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)}"
     url="https://www.apkmirror.com/apk/google-inc/youtube-music/youtube-music-${version//./-}-release"
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
     url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("arm64-v8a"))')
