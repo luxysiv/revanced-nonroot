@@ -31,7 +31,8 @@ download_resources() {
 download_youtube_apk() {
     version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "com.google.android.youtube")
     url="https://www.apkmirror.com/apk/google-inc/youtube/youtube-${version//./-}-release"
-    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' | pup -p --charset utf-8 'a.accent_color attr{href}')
+    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
+    url=$(echo "$url" | pup -p --charset utf-8 'a.accent_color attr{href}' | uniq)
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
     url="https://www.apkmirror.com${url}" 
@@ -44,7 +45,7 @@ download_ytm_apk() {
     url="https://www.apkmirror.com/apk/google-inc/youtube-music/youtube-music-${version//./-}-release"
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
     url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("arm64-v8a"))')
-    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("nodpi")) a.accent_color attr{href}')
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("nodpi")) a.accent_color attr{href}' | uniq)
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
     url="https://www.apkmirror.com${url}" 
