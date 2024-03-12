@@ -28,28 +28,17 @@ download_resources() {
     done <<< "$assetUrls"
 }
 
-download_youtube_apk() {
-    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "com.google.android.youtube")
-    url="https://www.apkmirror.com/apk/google-inc/youtube/youtube-${version//./-}-release"
+apkmirror() {    
+    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$5")
+    version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=$2" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)}"
+    url="https://www.apkmirror.com/apk/$1/$2/$2-${version//./-}-release"
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
-    url=$(echo "$url" | pup -p --charset utf-8 'a.accent_color attr{href}' | uniq)
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("'$3'"))')
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("'$4'")) a.accent_color attr{href}' | uniq)
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
     url="https://www.apkmirror.com${url}" 
-    req youtube-v$version.apk "$url"
-}
-
-download_ytm_apk() {
-    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "com.google.android.apps.youtube.music")
-    version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=youtube-music" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)}"
-    url="https://www.apkmirror.com/apk/google-inc/youtube-music/youtube-music-${version//./-}-release"
-    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
-    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("arm64-v8a"))')
-    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("nodpi")) a.accent_color attr{href}' | uniq)
-    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
-    url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
-    url="https://www.apkmirror.com${url}" 
-    req youtube-music-v$version.apk "$url"
+    req $2-v$version.apk "$url"
 }
 
 apply_patches() {   
@@ -139,11 +128,19 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    download_youtube_apk
+    apkmirror "google-inc" \
+              "youtube" \
+              "" \
+              "" \
+              "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    download_ytm_apk
+    apkmirror "google-inc" \
+              "youtube-music" \
+              "" \
+              "nodpi" \
+              "com.google.android.apps.youtube.music"
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
