@@ -51,7 +51,7 @@ uptodown() {
     url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(span:contains("'$version'"))')
     url=$(echo "$url" | pup -p --charset utf-8 'div[data-url]' attr{data-url})
     url=$(echo "$url" | sed 's/\/download\//\/post-download\//g')
-    url="https://dw.uptodown.com/dwn/$(req - "$url" | pup 'div.post-download[data-url] attr{data-url}')"
+    url="https://dw.uptodown.com/dwn/$(req - "$url" | pup -p --charset utf-8 'div.post-download[data-url] attr{data-url}')"
     req $name-v$version.apk "$url"
 }
 
