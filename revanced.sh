@@ -42,6 +42,19 @@ apkmirror() {
     req $2-v$version.apk "$url"
 }
 
+uptodown() {
+    name="$1" package="$2"
+    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    url="https://$name.en.uptodown.com/android/versions"
+    version="${version:-$(req - 2>/dev/null "$url" | pup 'div#versions-items-list > div span.version text{}' | get_latest_version)}"
+    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("apk")))')
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(span:contains("'$version'"))')
+    url=$(echo "$url" | pup -p --charset utf-8 'div[data-url]' attr{data-url})
+    url=$(echo "$url" | sed 's/\/download\//\/post-download\//g')
+    url="https://dw.uptodown.com/dwn/$(req - "$url" | pup 'div.post-download[data-url] attr{data-url}')"
+    req $name-v$version.apk "$url"
+}
+
 apply_patches() {   
     name="$1"
     # Read patches from file
@@ -131,17 +144,14 @@ check_release_body() {
 patch() {
     apkmirror "google-inc" \
               "youtube" \
-              "" \
-              "" \
+              "universal" \
+              "nodpi" \
               "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    apkmirror "google-inc" \
-              "youtube-music" \
-              "" \
-              "nodpi" \
-              "com.google.android.apps.youtube.music"
+    uptodown "youtube-music" \
+             "com.google.android.apps.youtube.music"
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
