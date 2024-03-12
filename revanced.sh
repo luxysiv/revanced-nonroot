@@ -28,6 +28,7 @@ download_resources() {
     done <<< "$assetUrls"
 }
 
+# Best but sometimes not work because APKmirror protection 
 apkmirror() {   
     org="$1" name="$2" arch="$3" dpi="$4" package="$5"
     version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
@@ -42,6 +43,7 @@ apkmirror() {
     req $2-v$version.apk "$url"
 }
 
+# X not work (maybe more)
 uptodown() {
     name="$1" package="$2"
     version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
@@ -52,6 +54,18 @@ uptodown() {
     url=$(echo "$url" | pup -p --charset utf-8 'div[data-url]' attr{data-url})
     url=$(echo "$url" | sed 's/\/download\//\/post-download\//g')
     url="https://dw.uptodown.com/dwn/$(req - "$url" | pup -p --charset utf-8 'div.post-download[data-url] attr{data-url}')"
+    req $name-v$version.apk "$url"
+}
+
+# Alot apps not work (YTM, Tiktok,X...) YT,Spotify, Reddit works
+apkpure() {
+    name="$1" package="$2"
+    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    url="https://apkpure.net/$name/$package/versions"
+    version="${version:-$(req - $url | pup 'div.ver-item > div.ver-item-n text{}' | get_latest_version)}"
+    url="https://apkpure.net/$name/$package/download/$version"
+    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("Download APK")))')
+    url=$(echo $url | pup -p --charset utf-8 'a[rel="nofollow"] attr{href}')
     req $name-v$version.apk "$url"
 }
 
@@ -142,11 +156,8 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    apkmirror "google-inc" \
-              "youtube" \
-              "universal" \
-              "nodpi" \
-              "com.google.android.youtube"
+    apkpure "youtube" \
+            "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
