@@ -40,7 +40,7 @@ apkmirror() {
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
     url="https://www.apkmirror.com${url}" 
-    req $2-v$version.apk "$url"
+    req $name-v$version.apk "$url"
 }
 
 # X not work (maybe more)
