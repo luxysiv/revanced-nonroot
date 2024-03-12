@@ -28,13 +28,14 @@ download_resources() {
     done <<< "$assetUrls"
 }
 
-apkmirror() {    
-    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$5")
-    version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=$2" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)}"
-    url="https://www.apkmirror.com/apk/$1/$2/$2-${version//./-}-release"
+apkmirror() {   
+    org="$1" name="$2" arch="$3" dpi="$4" package="$5"
+    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=$name" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)}"
+    url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
-    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("'$3'"))')
-    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("'$4'")) a.accent_color attr{href}' | uniq)
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("'$arch'"))')
+    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("'$dpi'")) a.accent_color attr{href}' | uniq)
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
     url="https://www.apkmirror.com${url}" 
