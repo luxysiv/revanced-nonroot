@@ -34,9 +34,9 @@ apkmirror() {
     version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=$name" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))')
-    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("'$arch'"))')
-    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(div:contains("'$dpi'")) a.accent_color attr{href}' | uniq)
+    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' \
+                       | pup -p --charset utf-8 ':parent-of(div:contains("'$arch'"))' \
+                       | pup -p --charset utf-8 ':parent-of(div:contains("'$dpi'")) a.accent_color attr{href}' | uniq)
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a.downloadButton attr{href}')
     url=$(req - "https://www.apkmirror.com$url" | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')
     url="https://www.apkmirror.com${url}" 
@@ -49,10 +49,10 @@ uptodown() {
     version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
     version="${version:-$(req - 2>/dev/null "$url" | pup 'div#versions-items-list > div span.version text{}' | get_latest_version)}"
-    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("apk")))')
-    url=$(echo "$url" | pup -p --charset utf-8 ':parent-of(span:contains("'$version'"))')
-    url=$(echo "$url" | pup -p --charset utf-8 'div[data-url]' attr{data-url})
-    url=$(echo "$url" | sed 's/\/download\//\/post-download\//g')
+    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("apk")))' \
+                       | pup -p --charset utf-8 ':parent-of(span:contains("'$version'"))' \
+                       | pup -p --charset utf-8 'div[data-url]' attr{data-url} \
+                       | sed 's/\/download\//\/post-download\//g')
     url="https://dw.uptodown.com/dwn/$(req - "$url" | pup -p --charset utf-8 'div.post-download[data-url] attr{data-url}')"
     req $name-v$version.apk "$url"
 }
@@ -64,8 +64,8 @@ apkpure() {
     url="https://apkpure.net/$name/$package/versions"
     version="${version:-$(req - $url | pup 'div.ver-item > div.ver-item-n text{}' | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
-    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("Download APK")))')
-    url=$(echo $url | pup -p --charset utf-8 'a[rel="nofollow"] attr{href}')
+    url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("Download APK")))' \
+                       | pup -p --charset utf-8 'a[rel="nofollow"] attr{href}')
     req $name-v$version.apk "$url"
 }
 
