@@ -242,7 +242,11 @@ repoOwner=$GITHUB_REPOSITORY_OWNER
 download_resources
 
 # Get the body content of the script repository release
-scriptRepoLatestRelease=$(wget -nv -O- 2>/dev/null "https://api.github.com/repos/$repoOwner/$repoName/releases/latest" --header="Authorization: token $accessToken" || true)
+scriptRepoLatestRelease=$( \
+    wget -nv -O- 2>/dev/null \
+    "https://api.github.com/repos/$repoOwner/$repoName/releases/latest" \
+    --header="Authorization: token $accessToken" || true \
+)
 scriptRepoBody=$(echo "$scriptRepoLatestRelease" | jq -r '.body')
 
 # Get the downloaded patch file name
