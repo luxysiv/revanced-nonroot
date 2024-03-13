@@ -90,6 +90,8 @@ apply_patches() {
         "${excludePatches[@]}" "${includePatches[@]}" \
         --out "patched-$name-v$version.apk" \
         "$name-v$version.apk"
+    rm $name-v$version.apk
+    unset excludePatches includePatches
 }
 
 sign_patched_apk() {   
@@ -103,6 +105,8 @@ sign_patched_apk() {
         --key-pass pass:public \
         --in "patched-$name-v$version.apk" \
         --out "$name-revanced-v$version.apk"
+    rm patched-$name-v$version.apk
+    unset version
 }
 
 create_github_release() {
