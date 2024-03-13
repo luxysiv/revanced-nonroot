@@ -31,7 +31,7 @@ download_resources() {
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {   
     org="$1" name="$2" arch="$3" dpi="$4" package="$5"
-    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=$name" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' \
@@ -46,7 +46,7 @@ apkmirror() {
 # X not work (maybe more)
 uptodown() {
     name="$1" package="$2"
-    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
     version="${version:-$(req - 2>/dev/null "$url" | pup 'div#versions-items-list > div span.version text{}' | get_latest_version)}"
     url=$(req - "$url" | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("apk")))' \
@@ -60,7 +60,7 @@ uptodown() {
 # Alot apps not work (YTM, Tiktok,X...) YT,Spotify, Reddit works
 apkpure() {
     name="$1" package="$2"
-    version=$(req - "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     url="https://apkpure.net/$name/$package/versions"
     version="${version:-$(req - $url | pup 'div.ver-item > div.ver-item-n text{}' | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
