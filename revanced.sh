@@ -223,8 +223,8 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    apkpure "youtube" \
-            "com.google.android.youtube"
+    uptodown "youtube" \
+             "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
