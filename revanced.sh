@@ -55,11 +55,10 @@ apkmirror() {
         req - "https://www.apkmirror.com$url" | \
         pup -p --charset utf-8 'a.downloadButton attr{href}' \
     )
-    url=$( \
+    url="https://www.apkmirror.com$( \
         req - "https://www.apkmirror.com$url" | \
         pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}' \
-    )
-    url="https://www.apkmirror.com${url}" 
+    )"
     req $name-v$version.apk "$url"
 }
 
