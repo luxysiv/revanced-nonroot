@@ -10,7 +10,7 @@ basename() {
 }
 
 get_latest_version() {
-    grep -Ev 'alpha|beta' | grep -oP '\d+(\.\d+)+' | sort -ur | sed -n '1p'
+    grep -Evi 'alpha|beta' | grep -oPi '\b\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?\b' | sort -ur | awk 'NR==1'
 }
 
 get_supported_version() {
@@ -86,13 +86,13 @@ uptodown() {
     url="https://dw.uptodown.com/dwn/$( \
         req - "$url" | \
         pup -p --charset utf-8 'div[class="post-download"]' | \
-        awk 'NR==1' |\
+        awk 'NR==1' | \
         pup -p --charset utf-8 'div[class="post-download"]' attr{data-url}
     )"
     req $name-v$version.apk "$url"
 }
 
-# Alot apps not work (YTM, Tiktok,X...) YT,Spotify, Reddit works
+# Tiktok not work because not available version supported 
 apkpure() {
     name="$1" package="$2"
     version=$( \
