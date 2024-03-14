@@ -85,9 +85,9 @@ uptodown() {
     )
     url="https://dw.uptodown.com/dwn/$( \
         req - "$url" | \
-        pup -p --charset utf-8 'div.post-download[data-url]' | \
-        pup -p --charset utf-8 'div.post-download[data-url]:first-child' attr{data-url} \
-    
+        pup -p --charset utf-8 'div[class="post-download"]' | \
+        awk 'NR==1' |\
+        pup -p --charset utf-8 'div[class="post-download"]' attr{data-url}
     )"
     req $name-v$version.apk "$url"
 }
