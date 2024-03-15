@@ -79,6 +79,8 @@ uptodown() {
         req - "$url" | \
         pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("apk")))' | \
         pup -p --charset utf-8 ':parent-of(span:contains("'$version'"))' | \
+        pup -p --charset utf-8 'div[data-url]' | \
+        awk 'NR==1' | \
         pup -p --charset utf-8 'div[data-url]' attr{data-url} | \
         sed 's/\/download\//\/post-download\//g' \
     )
