@@ -229,8 +229,11 @@ patch() {
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    uptodown "youtube-music" \
-             "com.google.android.apps.youtube.music"
+    apkmirror "google-inc" \
+              "youtube-music" \
+              "arm64-v8a" \
+              "nodpi" \
+              "com.google.android.apps.youtube.music"
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
