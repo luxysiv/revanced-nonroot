@@ -90,7 +90,6 @@ uptodown() {
         awk 'NR==1' | \
         pup -p --charset utf-8 'div[class="post-download"]' attr{data-url}
     )"
-    sleep 3
     req $name-v$version.apk "$url"
 }
 
