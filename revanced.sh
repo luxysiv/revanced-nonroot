@@ -10,7 +10,7 @@ basename() {
 }
 
 get_latest_version() {
-    grep -Evi 'alpha|beta' | grep -oPi '\b\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?\b' | sort -ur | awk 'NR==1'
+    grep -Evi 'alpha|beta' | grep -oPi '\b\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?\b' | sort -ur | grep -m 1 "."
 }
 
 get_supported_version() {
@@ -52,7 +52,7 @@ apkpure() {
     version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     version="${version:-$(req - "$url" | grep -oP 'data-dt-version="\K[^"]*' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
-    url=$(req - "$url" | grep 'Download APK' | grep -oP 'href="\Khttps://d\.apkpure\.net/b/APK[^"]*' | uniq)
+    url=$(req - "$url" | grep -oP 'href="\Khttps://.\.apkpure\.net/b/APK[^"]*' | uniq)
     req $name-v$version.apk $url
 }
 
