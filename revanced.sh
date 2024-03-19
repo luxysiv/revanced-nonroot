@@ -45,6 +45,17 @@ uptodown() {
     req $name-v$version.apk $url
 }
 
+# Tiktok not work because not available version supported 
+apkpure() {
+    name=$1 package=$2
+    url="https://apkpure.net/$name/$package/versions"
+    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    version="${version:-$(req - "$url" | grep -oP 'data-dt-version="\K[^"]*' | sed 10q | get_latest_version)}"
+    url="https://apkpure.net/$name/$package/download/$version"
+    url=$(req - "$url" | grep 'Download APK' | grep -oP 'href="\Khttps://d\.apkpure\.net/b/APK[^"]*' | uniq)
+    req $name-v$version.apk $url
+}
+
 apply_patches() {   
     name="$1"
     # Read patches from file
@@ -154,13 +165,13 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    uptodown "youtube" \
-             "com.google.android.youtube"
+    apkpure "youtube" \
+            "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    uptodown "youtube-music" \
-             "com.google.android.apps.youtube.music"
+    apkpure "youtube-music" \
+            "com.google.android.apps.youtube.music"
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
