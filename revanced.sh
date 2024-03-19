@@ -36,7 +36,7 @@ uptodown() {
     name=$1 package=$2
     version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
-    version="${version:-$(req - 2>/dev/null "$url" | grep '"version">' | grep -oP 'class="version">\K[^<]+' | get_latest_version)}"
+    version="${version:-$(req - 2>/dev/null "$url" | grep -oP 'class="version">\K[^<]+' | get_latest_version)}"
     url=$(req - "$url" | grep -B3 '"version">'$version'<' \
                        | grep -oP 'data-url="\K[^"]*' \
                        | grep -m 1 "." \
