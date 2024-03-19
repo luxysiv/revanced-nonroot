@@ -31,88 +31,18 @@ download_resources() {
     done <<< "$assetUrls"
 }
 
-# Best but sometimes not work because APKmirror protection 
-apkmirror() {
-    org="$1" name="$2" arch="$3" dpi="$4" package="$5"
-    version=$( \
-        req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | \
-        get_supported_version "$package" \
-    )
-    version="${version:-$( \
-        req - "https://www.apkmirror.com/uploads/?appcategory=$name" | \
-        pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | \
-        get_latest_version \
-    )}"
-    url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url=$( \
-        req - "$url" | \
-        pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' | \
-        pup -p --charset utf-8 ':parent-of(div:contains("'$arch'"))' | \
-        pup -p --charset utf-8 ':parent-of(div:contains("'$dpi'")) a.accent_color attr{href}' | \
-        uniq \
-    )
-    url=$( \
-        req - "https://www.apkmirror.com$url" | \
-        pup -p --charset utf-8 'a.downloadButton attr{href}' \
-    )
-    url="https://www.apkmirror.com$( \
-        req - "https://www.apkmirror.com$url" | \
-        pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}' \
-    )"
-    req $name-v$version.apk "$url"
-}
-
 # X not work (maybe more)
 uptodown() {
-    name="$1" package="$2"
-    version=$( \
-        req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | \
-        get_supported_version "$package" \
-    )
+    name=$1 package=$2
+    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
-    version="${version:-$( \
-        req - 2>/dev/null "$url" | \
-        pup 'div#versions-items-list > div span.version text{}' | \
-        get_latest_version \
-    )}"
-    url=$( \
-        req - "$url" | \
-        pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("apk")))' | \
-        pup -p --charset utf-8 ':parent-of(span:contains("'$version'"))' | \
-        pup -p --charset utf-8 'div[data-url]' | \
-        awk 'NR==1' | \
-        pup -p --charset utf-8 'div[data-url]' attr{data-url} | \
-        sed 's/\/download\//\/post-download\//g' \
-    )
-    url="https://dw.uptodown.com/dwn/$( \
-        req - "$url" | \
-        pup -p --charset utf-8 'div[class="post-download"]' | \
-        awk 'NR==1' | \
-        pup -p --charset utf-8 'div[class="post-download"]' attr{data-url}
-    )"
-    req $name-v$version.apk "$url"
-}
-
-# Tiktok not work because not available version supported 
-apkpure() {
-    name="$1" package="$2"
-    version=$( \
-        req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | \
-        get_supported_version "$package" \
-    )
-    url="https://apkpure.net/$name/$package/versions"
-    version="${version:-$( \
-        req - "$url" | \
-        pup 'div.ver-item > div.ver-item-n text{}' | \
-        get_latest_version \
-    )}"
-    url="https://apkpure.net/$name/$package/download/$version"
-    url=$( \
-        req - "$url" | \
-        pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("Download APK")))' | \
-        pup -p --charset utf-8 'a[rel="nofollow"] attr{href}' \
-    )
-    req $name-v$version.apk "$url"
+    version=$(req - "$url" | grep '"version">' | grep -oP 'class="version">\K[^<]+' | get_latest_version)
+    url=$(req - "$url" | grep -B3 '"version">'$version'<' \
+                       | grep -oP 'data-url="\K[^"]*' \
+                       | grep -m 1 "." \
+                       | sed 's/\/download\//\/post-download\//g')
+    url="https://dw.uptodown.com/dwn/$(req - "$url" | grep 'class="post-download"' | grep -oP 'data-url="\K[^"]+')"
+    req $name-v$version.apk $url
 }
 
 apply_patches() {   
@@ -224,19 +154,13 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    apkmirror "google-inc" \
-              "youtube" \
-              "universal" \
-              "nodpi" \
-              "com.google.android.youtube"
+    uptodown "youtube" \
+             "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    apkmirror "google-inc" \
-              "youtube-music" \
-              "arm64-v8a" \
-              "nodpi" \
-              "com.google.android.apps.youtube.music"
+    uptodown "youtube-music" \
+             "com.google.android.apps.youtube.music"
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
