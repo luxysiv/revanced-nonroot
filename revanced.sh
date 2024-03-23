@@ -31,20 +31,6 @@ download_resources() {
     done <<< "$assetUrls"
 }
 
-# X not work (maybe more)
-uptodown() {
-    name=$1 package=$2
-    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
-    url="https://$name.en.uptodown.com/android/versions"
-    version="${version:-$(req - 2>/dev/null "$url" | grep -oP 'class="version">\K[^<]+' | get_latest_version)}"
-    url=$(req - "$url" | grep -B3 '"version">'$version'<' \
-                       | grep -oP 'data-url="\K[^"]*' \
-                       | grep -m 1 "." \
-                       | sed 's/\/download\//\/post-download\//g')
-    url="https://dw.uptodown.com/dwn/$(req - "$url" | grep 'class="post-download"' | grep -oP 'data-url="\K[^"]+')"
-    req $name-v$version.apk $url
-}
-
 # Tiktok not work because not available version supported 
 apkpure() {
     name=$1 package=$2
