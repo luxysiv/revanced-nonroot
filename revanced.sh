@@ -36,10 +36,9 @@ apkpure() {
     name=$1 package=$2
     url="https://apkpure.net/$name/$package/versions"
     version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
-    version="${version:-$(req - "$url" | grep -oP 'data-dt-version="\K[^"]*' | sed 10q | get_latest_version)}"
+    version="${version:-$(req - "$url" | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
-    url=$(req - "$url" | grep -oP 'href="\Khttps://.\.apkpure\.net/b/APK[^"]*' | uniq)
-    req $name-v$version.apk $url
+    url=$(req - "$url" | sed -n 's/.*href="\(https:\/\/.*\.apkpure\..*\/.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
 }
 
 apply_patches() {   
