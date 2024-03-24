@@ -17,6 +17,10 @@ get_supported_version() {
     jq -r --arg pkg_name "$1" '.. | objects | select(.name == "\($pkg_name)" and .versions != null) | .versions[-1]' | uniq
 }
 
+get_apkmirror_version() {
+    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | head -n 20
+}
+
 download_resources() {
     local revancedApiUrl="https://releases.revanced.app/tools"
     local response=$(req - 2>/dev/null "$revancedApiUrl")
@@ -29,6 +33,21 @@ download_resources() {
     while read -r downloadUrl && read -r assetName; do
         req "$assetName" "$downloadUrl" 
     done <<< "$assetUrls"
+}
+
+# Best but sometimes not work because APKmirror protection 
+apkmirror() {
+    org="$1" name="$2" package="$3" arch="$4" 
+    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=$name" | get_apkmirror_version | get_latest_version )}"
+    url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
+    url=$( req - "$url" | grep -B5 -A10 '<span class="apkm-badge">APK</span>' \
+                        | grep -B13 -A2 "$arch" \
+                        | grep -B15 'nodpi' \
+                        | sed -n 's/.*<a class="accent_color" href="\([^"]*\)".*/\1/p;q')
+    url=$(req - "https://www.apkmirror.com$url" | sed -n '/downloadButton/ s/.*href="\([^"]*\).*/\1/p')
+    url="https://www.apkmirror.com$(req - "https://www.apkmirror.com$url" | sed -n '/rel="nofollow"/{s/.*href="\([^"]*\).*/\1\&forcebaseapk=true/g; s/&amp;/\&/g; T; p}')"
+    req $name-v$version.apk "$url"
 }
 
 # Tiktok not work because not available version supported 
@@ -151,13 +170,16 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    apkpure "youtube" \
-            "com.google.android.youtube"
+    apkmirror "google-inc" \
+              "youtube" \
+              "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    apkpure "youtube-music" \
-            "com.google.android.apps.youtube.music"
+    apkmirror "google-inc" \
+              "youtube-music" \
+              "com.google.android.apps.youtube.music"
+              "arm64-v8a"
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
