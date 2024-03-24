@@ -178,7 +178,7 @@ patch() {
     create_github_release "youtube"
     apkmirror "google-inc" \
               "youtube-music" \
-              "com.google.android.apps.youtube.music"
+              "com.google.android.apps.youtube.music" \
               "arm64-v8a"
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
