@@ -39,17 +39,16 @@ download_resources() {
 apkmirror() {
     org="$1" name="$2" package="$3" arch="$4" 
     version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
-    version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=$name" | get_apkmirror_version | get_latest_version )}"
+    url="https://www.apkmirror.com/uploads/?appcategory=$name"
+    version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url=$( req - "$url" | grep -B5 -A10 '<span class="apkm-badge">APK</span>' \
-                        | grep -B13 -A2 "$arch" \
-                        | grep -B15 'nodpi' \
-                        | sed -n 's/.*<a class="accent_color" href="\([^"]*\)".*/\1/p;q')
-    url=$(req - "https://www.apkmirror.com$url" | sed -n '/downloadButton/ s/.*href="\([^"]*\).*/\1/p')
-    url="https://www.apkmirror.com$( \
-        req - "https://www.apkmirror.com$url" | \
-        sed -n '/rel="nofollow"/{s/.*href="\([^"]*\).*/\1\&forcebaseapk=true/g; s/&amp;/\&/g; T; p}')"
-    req $name-v$version.apk "$url"
+    url="https://www.apkmirror.com$(req - $url | grep -B5 -A10 '<span class="apkm-badge">APK</span>' \
+                                               | grep -B13 -A2 "$arch" \
+                                               | grep -B15 'nodpi' \
+                                               | sed -n 's/.*<a class="accent_color" href="\([^"]*\)".*/\1/p;q')"
+    url="https://www.apkmirror.com$(req - $url | sed -n '/downloadButton/s/.*href="\([^"]*\).*/\1/p')"
+    url="https://www.apkmirror.com$(req - $url | sed -n '/rel="nofollow"/{s/.*href="\([^"]*\).*/\1\&forcebaseapk=true/g; s/&amp;/\&/g; T; p}')"
+    req $name-v$version.apk $url
 }
 
 # Tiktok not work because not available version supported 
