@@ -18,7 +18,7 @@ get_supported_version() {
 }
 
 get_apkmirror_version() {
-    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | head -n 20
+    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p; 20q'
 }
 
 download_resources() {
@@ -47,7 +47,7 @@ apkmirror() {
                         | sed -n 's/.*<a class="accent_color" href="\([^"]*\)".*/\1/p;q')
     url=$(req - "https://www.apkmirror.com$url" | sed -n '/downloadButton/ s/.*href="\([^"]*\).*/\1/p')
     url="https://www.apkmirror.com$(req - "https://www.apkmirror.com$url" | sed -n '/rel="nofollow"/{s/.*href="\([^"]*\).*/\1\&forcebaseapk=true/g; s/&amp;/\&/g; T; p}')"
-    req $name-v$version.apk "$url"
+    req $name-v$version.apk $url
 }
 
 # Tiktok not work because not available version supported 
@@ -55,7 +55,7 @@ apkpure() {
     name=$1 package=$2
     url="https://apkpure.net/$name/$package/versions"
     version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
-    version="${version:-$(req - "$url" | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
+    version="${version:-$(req - "$url" | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p; 10q' | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
     url=$(req - "$url" | sed -n 's/.*href="\(https:\/\/.*\.apkpure\..*\/.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
     req $name-v$version.apk $url
