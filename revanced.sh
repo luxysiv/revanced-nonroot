@@ -55,7 +55,7 @@ apkpure() {
     name=$1 package=$2
     url="https://apkpure.net/$name/$package/versions"
     version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
-    version="${version:-$(req - "$url" | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p; 10q' | get_latest_version)}"
+    version="${version:-$(req - "$url" | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
     url=$(req - "$url" | sed -n 's/.*href="\(https:\/\/.*\.apkpure\..*\/.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
     req $name-v$version.apk $url
@@ -170,13 +170,16 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    apkpure "youtube" \
-            "com.google.android.youtube"
+    apkmirror "google-inc" \
+              "youtube" \
+              "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    apkpure "youtube-music" \
-            "com.google.android.apps.youtube.music"
+    apkmirror "google-inc" \
+              "youtube-music" \
+              "com.google.android.apps.youtube.music" \
+              "arm64-v8a"
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
