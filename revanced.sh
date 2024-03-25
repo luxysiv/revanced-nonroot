@@ -18,7 +18,7 @@ get_supported_version() {
 }
 
 get_apkmirror_version() {
-    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p; 20q'
+    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | sed 20q
 }
 
 download_resources() {
