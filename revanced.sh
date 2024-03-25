@@ -46,7 +46,7 @@ apkmirror() {
                         | grep -B15 'nodpi' \
                         | sed -n 's/.*<a class="accent_color" href="\([^"]*\)".*/\1/p;q')
     url=$(req - "https://www.apkmirror.com$url" | sed -n '/downloadButton/ s/.*href="\([^"]*\).*/\1/p')
-    url="https://www.apkmirror.com$(req - "https://www.apkmirror.com$url" | sed -n '/rel="nofollow"/{s/.*href="\([^"]*\).*/\1\&forcebaseapk=true/g; s/&amp;/\&/g; T; p}')"
+    url="https://www.apkmirror.com$(req - "https://www.apkmirror.com$url" | sed -n '/rel="nofollow"/{s#.*href="\(.*key=[^"]*\)">.*#\1#;s#amp;##p}')"
     req $name-v$version.apk $url
 }
 
