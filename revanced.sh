@@ -1,5 +1,6 @@
 #!/bin/bash
 UserAgent="Chrome/74.0.3729.169"
+api="https://api.revanced.app/v2/patches/latest"
 
 req() {
     wget -U "$UserAgent" -nv -O "$1" "$2"
@@ -38,27 +39,25 @@ download_resources() {
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {
     org="$1" name="$2" package="$3" arch="$4" 
-    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url="https://www.apkmirror.com$(req - $url | grep -B5 -A10 '<span class="apkm-badge">APK</span>' \
-                                               | grep -B13 -A2 "$arch" \
-                                               | grep -B15 'nodpi' \
-                                               | sed -n 's/.*<a class="accent_color" href="\([^"]*\)".*/\1/p;q')"
+    url="https://www.apkmirror.com$(req - $url | grep -B5 -A10 '>APK<' | grep -B15 'nodpi' \
+                                               | grep -B13 -A2 "$arch" | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
     url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\).*/\1/p;q')"
     url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\).*/\1/g;s#amp;##g;p;q')"
-    req $name-v$version.apk "$url"
+    req $name-v$version.apk $url
 }
 
 # Tiktok not work because not available version supported 
 apkpure() {
     name=$1 package=$2
+    version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://apkpure.net/$name/$package/versions"
-    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
-    version="${version:-$(req - "$url" | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
+    version="${version:-$(req - $url | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
-    url=$(req - "$url" | sed -n 's/.*href="\(https:\/\/.*\.apkpure\..*\/.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
+    url=$(req - $url | sed -n 's/.*href="\(https:\/\/.*\.apkpure\..*\/.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
     req $name-v$version.apk $url
 }
 
