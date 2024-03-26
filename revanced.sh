@@ -46,9 +46,9 @@ apkmirror() {
                                                | grep -B13 -A2 "$arch" \
                                                | grep -B15 'nodpi' \
                                                | sed -n 's/.*<a class="accent_color" href="\([^"]*\)".*/\1/p;q')"
-    url="https://www.apkmirror.com$(req - $url | sed -n '/downloadButton/s/.*href="\([^"]*\).*/\1/p')"
-    url="https://www.apkmirror.com$(req - $url | sed -n '/rel="nofollow"/{s/.*href="\([^"]*\).*/\1\&forcebaseapk=true/g; s/&amp;/\&/g; T; p}')"
-    req $name-v$version.apk $url
+    url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\).*/\1/p;q')"
+    url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\).*/\1/g;s/amp;//g;p;q')"
+    req $name-v$version.apk "$url"
 }
 
 # Tiktok not work because not available version supported 
