@@ -36,20 +36,6 @@ download_resources() {
     done <<< "$assetUrls"
 }
 
-# Best but sometimes not work because APKmirror protection 
-apkmirror() {
-    org="$1" name="$2" package="$3" arch="$4" 
-    version=$(req - 2>/dev/null $api | get_supported_version "$package")
-    url="https://www.apkmirror.com/uploads/?appcategory=$name"
-    version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
-    url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url="https://www.apkmirror.com$(req - $url | grep -B5 -A10 '>APK<' | grep -B15 'nodpi' \
-                                               | grep -B13 -A2 "$arch" | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
-    url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
-    url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\)".*/\1/g;s#amp;##g;p;q')"
-    req $name-v$version.apk $url
-}
-
 # Tiktok not work because not available version supported 
 apkpure() {
     name=$1 package=$2
@@ -170,16 +156,13 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    apkmirror "google-inc" \
-              "youtube" \
-              "com.google.android.youtube"
+    apkpure "youtube" \
+            "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    apkmirror "google-inc" \
-              "youtube-music" \
-              "com.google.android.apps.youtube.music" \
-              "arm64-v8a"
+    apkpure "youtube-music" \
+            "com.google.android.apps.youtube.music" 
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
