@@ -45,8 +45,8 @@ apkmirror() {
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
     url="https://www.apkmirror.com$(req - $url | grep -B5 -A10 '>APK<' | grep -B15 'nodpi' \
                                                | grep -B13 -A2 "$arch" | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
-    url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\).*/\1/p;q')"
-    url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\).*/\1/g;s#amp;##g;p;q')"
+    url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
+    url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\)".*/\1/g;s#amp;##g;p;q')"
     req $name-v$version.apk $url
 }
 
