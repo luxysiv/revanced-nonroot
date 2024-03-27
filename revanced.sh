@@ -18,10 +18,6 @@ get_supported_version() {
     jq -r --arg pkg_name "$1" '.. | objects | select(.name == "\($pkg_name)" and .versions != null) | .versions[-1]' | uniq
 }
 
-get_apkmirror_version() {
-    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | sed 20q
-}
-
 download_resources() {
     local revancedApiUrl="https://releases.revanced.app/tools"
     local response=$(req - 2>/dev/null "$revancedApiUrl")
