@@ -1,0 +1,146 @@
+<!DOCKTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      :root {
+        --bg-color: #f0f0f0;
+        --text-color: #333;
+        --link-color: #007bff;
+        --border-color: #ccc;
+        --button-color: #007bff;
+        --button-text: white;
+      }
+      [data-theme="dark"] {
+        --bg-color: #333;
+        --text-color: #f0f0f0;
+        --link-color: #66ccff;
+        --border-color: #666;
+        --button-color: #66ccff;
+        --button-text: black;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+      }
+      h1 {
+        text-align: center;
+      }
+      h2 {
+        color: var(--link-color);
+        text-align: center;
+      }
+      p {
+        margin: 10px auto;
+        max-width: 800px;
+        text-align: justify;
+      }
+      ul {
+        list-style: none;
+        margin: 0 auto;
+        max-width: 600px;
+      }
+      li {
+        margin: 10px;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+      }
+      a {
+        display: block;
+        text-decoration: none;
+        color: var(--link-color);
+        flex-grow: 1;
+      }
+      button {
+        display : inline-block; 
+         width : 80px; 
+         height : 40px; 
+         padding : 5px 10px; 
+         border : none; 
+         border-radius : 5px; 
+         background-color : var(--button-color); 
+         color : var(--button-text); 
+         cursor : pointer
+       } 
+       @media (min-width : 768px) {ul {max-width : 800px; display : grid; grid-template-columns : repeat(2, 1fr); grid-gap : 20px; animation-name : slide-in-left, slide-in-right; animation-duration : .5s; animation-timing-function:cubic-bezier(.25,.46,.45,.94); animation-fill-mode:both} ul li:nth-child(odd) {animation-name : slide-in-left} ul li:nth-child(even) {animation-name : slide-in-right}} @keyframes slide-in-left {from {transform : translateX(-100%)} to {transform : translateX(0)}} @keyframes slide-in-right {from {transform : translateX(100%)} to {transform : translateX(0)}} @keyframes fade-in {from {opacity : 0} to {opacity : 1}}
+      footer {
+         margin-top : 20px; 
+         padding-top : 10px; 
+         border-top : 1px solid var(--border-color); 
+         text-align : center
+       } 
+       .toggle-container {display:none}
+    </style>
+    <title>YouTube Revanced</title>
+  </head>
+  <body>
+    <h1>YouTube Revanced</h1>
+    <div class="toggle-container">
+     <input type="checkbox" id="theme-toggle">
+     <label for="theme-toggle">
+      <span>Light Mode</span>
+      <span>Dark Mode</span>
+     </label>
+    </div>
+    <h2>🌟 Welcome to the my download YouTube & YouTube Music Revanced site🌟</h2>
+    <p>Revanced is a modded version of YouTube that allows you to use premium features without subscribing to YouTube Premium, such as blocking ads, playing in the background, downloading videos and more. </p>
+    <p>To use Revanced, you need to install ReVanced GmsCore, a modded version of GmsCore that allows you to log in to your Google account on YouTube. You can download ReVanced GmsCore from the list below.</p>
+    <p>You can visit the my GitHub repository here:</p>
+    <p><a href="https://github.com/luxysiv/revanced-nonroot">luxysiv/revanced-nonroot</a></p>
+    <div id="region-1">
+    <p style="font-weight: bold; font-style: iitalic; color: red; text-align: center;">YouTube & YouTube Music Revanced</p>
+    <ul id="file-list-1"></ul>
+    </div>
+    <div id="region-2">
+    <p style="font-weight: bold; font-style: italic;color: red; text-align: center;">ReVanced GmsCore</p>
+    <ul id="file-list-2"></ul>
+    </div>
+    <script>
+    const themeToggle = document.getElementById('theme-toggle');
+     themeToggle.addEventListener('change', function() {
+       document.documentElement.toggleAttribute('data-theme', 'dark');
+     });
+    const sources = [
+      'https://api.github.com/repos/luxysiv/revanced-nonroot/releases/latest',
+      'https://api.github.com/repos/revanced/GmsCore/releases/latest'
+    ];
+    function createListItem(asset, sourceIndex, regionId) {
+      const listItem = document.createElement('li');
+      listItem.id = 'file-' + sourceIndex + '-' + asset.id; 
+      const downloadLink = document.createElement('a');
+      downloadLink.href = asset.browser_download_url;
+      downloadLink.textContent =
+        asset.name + ' (' + (asset.size / 1024 / 1024).toFixed(2) + ' MB)';
+      const downloadButton = document.createElement('button');
+      downloadButton.textContent = 'Download';
+      downloadButton.onclick = function () {
+        window.open(downloadLink.href);
+      };
+      listItem.appendChild(downloadLink);
+      listItem.appendChild(downloadButton);
+      const fileList = document.getElementById('file-list-' + regionId);
+      fileList.appendChild(listItem);
+      return listItem;
+    }
+    sources.forEach((source, index) => {
+      fetch(source)
+        .then((response) => response.json())
+        .then((data) => {
+          data.assets.forEach((asset) => {
+            if (!asset.name.endsWith('.txt')) {
+              const listItem = createListItem(asset, index, index + 1);
+            }
+          });
+        });
+    });
+    </script>
+    <footer>
+      <p style="font-weight: bold; font-style: italic; text-align: center;">Created by<a href="https://github.com/luxysiv">Mạnh Dương</a></p>
+    </footer>
+  </body>
+</html>
