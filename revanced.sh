@@ -45,7 +45,7 @@ apkmirror() {
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
     url="https://www.apkmirror.com$(req - $url | sed -n ':a;N;$!ba;s/\n/ /g; s/.*" href="\([^"]*\)".*'$arch'<\/div>[^@]*@\([^<]*\).*/\1/p')"
     url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
-    url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\)".*/\1/g;s#amp;##g;p;q')&forcebaseapk=true"
+    url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\)".*/\1/g;s#amp;##g;p;q')"
     req $name-v$version.apk $url
 }
 
@@ -169,17 +169,13 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    apkmirror "google-inc" \
-              "youtube" \
-              "com.google.android.youtube" \
-              "universal"
+    apkpure "youtube" \
+            "com.google.android.youtube" 
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    apkmirror "google-inc" \
-              "youtube-music" \
-              "com.google.android.apps.youtube.music" \
-              "arm64-v8a"
+    apkmirror "youtube-music" \
+              "com.google.android.apps.youtube.music" 
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
