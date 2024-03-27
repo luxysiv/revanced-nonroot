@@ -43,8 +43,7 @@ apkmirror() {
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url="https://www.apkmirror.com$(req - $url | grep -B5 -A10 '>APK<' | grep -B13 -A2 '>'$arch'<' \
-                                               | grep -B15 '>nodpi</d' | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
+    url="https://www.apkmirror.com$(req - $url | sed -n ':a;N;$!ba;s/\n/ /g; s/.*"accent_color" href="\([^"]*\)".*'$arch'<\/div>[^@]*@\([^<]*\).*/\1/p')"
     url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
     url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\)".*/\1/g;s#amp;##g;p;q')"
     req $name-v$version.apk $url
@@ -172,7 +171,8 @@ check_release_body() {
 patch() {
     apkmirror "google-inc" \
               "youtube" \
-              "com.google.android.youtube"
+              "com.google.android.youtube" \
+              "universal"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
