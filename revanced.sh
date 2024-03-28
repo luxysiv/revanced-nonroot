@@ -3,7 +3,8 @@ api="https://api.revanced.app/v2/patches/latest"
 
 req() {
     wget -nv -O "$1" "$2" \
-    --header="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (HTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36" \
+    --header="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
+                          AppleWebKit/537.36 (HTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36" \
     --header="Authorization: Basic YXBpLWFwa3VwZGF0ZXI6cm01cmNmcnVVakt5MDRzTXB5TVBKWFc4" \
     --header="Content-Type: application/json"
 }
@@ -45,7 +46,8 @@ apkmirror() {
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url="https://www.apkmirror.com$(req - $url | sed -n ':a;N;$!ba;s/\n/ /g; s/.*" href="\([^"]*\)".*'$arch'<\/div>[^@]*@\([^<]*\).*/\1/p')"
+    url="https://www.apkmirror.com$(req - $url | sed ':a;N;$!ba;s/\n/ /g' |
+                                               | sed -n 's/.*" href="\([^"]*\)".*'$arch'<\/div>[^@]*@\([^<]*\).*/\1/p')"
     url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
     url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\)".*/\1/g;s#amp;##g;p;q')"
     req $name-v$version.apk $url
