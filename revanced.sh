@@ -51,6 +51,20 @@ apkmirror() {
     req $name-v$version.apk $url
 }
 
+# X not work (maybe more)
+uptodown() {
+    name=$1 package=$2
+    version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
+    url="https://$name.en.uptodown.com/android/versions"
+    version="${version:-$(req - 2>/dev/null "$url" | grep -oP 'class="version">\K[^<]+' | get_latest_version)}"
+    url=$(req - "$url" | grep -B3 '"version">'$version'<' \
+                       | grep -oP 'data-url="\K[^"]*' \
+                       | grep -m 1 "." \
+                       | sed 's/\/download\//\/post-download\//g')
+    url="https://dw.uptodown.com/dwn/$(req - "$url" | grep 'class="post-download"' | grep -oP 'data-url="\K[^"]+')"
+    req $name-v$version.apk $url
+}
+
 # Tiktok not work because not available version supported 
 apkpure() {
     name=$1 package=$2
@@ -171,17 +185,13 @@ check_release_body() {
 
 # Activity patches APK
 patch() {
-    apkmirror "google-inc" \
-              "youtube" \
-              "com.google.android.youtube" \
-              "universal"
+    uptodown "youtube" \
+             "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
-    apkmirror "google-inc" \
-              "youtube-music" \
-              "com.google.android.apps.youtube.music" \
-              "arm64-v8a"
+    uptodown "youtube-music" \
+             "com.google.android.apps.youtube.music"
     apply_patches "youtube-music"
     sign_patched_apk "youtube-music"
     create_github_release "youtube-music"
