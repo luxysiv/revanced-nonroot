@@ -46,7 +46,7 @@ apkmirror() {
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url="https://www.apkmirror.com$(req - $url | sed ':a;N;$!ba;s/\n/ /g' |
+    url="https://www.apkmirror.com$(req - $url | sed ':a;N;$!ba;s/\n/ /g' \
                                                | sed -n 's/.*" href="\([^"]*\)".*'$arch'<\/div>[^@]*@\([^<]*\).*/\1/p')"
     url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
     url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\)".*/\1/g;s#amp;##g;p;q')"
