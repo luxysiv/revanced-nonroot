@@ -58,12 +58,11 @@ uptodown() {
     name=$1 package=$2
     version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
-    version="${version:-$(req - 2>/dev/null "$url" | grep -oP 'class="version">\K[^<]+' | get_latest_version)}"
-    url=$(req - "$url" | grep -B3 '"version">'$version'<' \
-                       | grep -oP 'data-url="\K[^"]*' \
-                       | grep -m 1 "." \
-                       | sed 's/\/download\//\/post-download\//g')
-    url="https://dw.uptodown.com/dwn/$(req - "$url" | grep 'class="post-download"' | grep -oP 'data-url="\K[^"]+')"
+    version="${version:-$(req - 2>/dev/null "$url" | sed -n 's/.*class="version">\([^<]*\)<.*/\1/p' | get_latest_version)}"
+    url=$(req - $url | sed ':a;N;$!ba;s/\n/ /g' \
+                     | sed -n 's/.*data-url="\([^"]*\)".*'$version'<\/span>[^@]*@\([^<]*\).*/\1/p' \
+                     | sed 's#/download/#/post-download/#g')
+    url="https://dw.uptodown.com/dwn/$(req - $url | sed -n 's/.*class="post-download".*data-url="\([^"]*\)".*/\1/p')"
     req $name-v$version.apk $url
 }
 
