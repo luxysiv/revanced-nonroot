@@ -73,7 +73,7 @@ apkpure() {
     url="https://apkpure.net/$name/$package/versions"
     version="${version:-$(req - $url | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
-    url=$(req - $url | sed -n 's/.*href="\(https:\/\/.*\.apkpure\..*\/.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
+    url=$(req - $url | sed -n 's/.*href="\(.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
     req $name-v$version.apk $url
 }
 
