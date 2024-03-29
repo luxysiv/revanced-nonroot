@@ -22,7 +22,7 @@ get_supported_version() {
 }
 
 get_apkmirror_version() {
-    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | sed 20q
+    sed -n 's/.*Version.*"infoSlide-value">\([^<]*\)<\/span>.*/\1/p'
 }
 
 download_resources() {
