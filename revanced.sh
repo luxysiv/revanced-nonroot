@@ -41,62 +41,39 @@ download_resources() {
 
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {
-    org="$1"
-    name="$2"
-    package="$3"
-    arch="$4" 
-    
+    org="$1" name="$2" package="$3" arch="$4" 
+    local regexp='.*APK\(.*\)'$arch'\(.*\)nodpi<\/div>[^@]*@\([^<]*\)'
     version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    
-    url="https://www.apkmirror.com$(req - $url | \
-        tr '\n' ' ' | \
-        sed -n 's/.*" href="\([^"]*\)".*APK\(.*\)'$arch'\(.*\)nodpi<\/div>[^@]*@\([^<]*\).*/\1/p')"
-    
-    url="https://www.apkmirror.com$(req - $url | \
-        tr '\n' ' ' | \
-        sed -n 's/.*href="\(.*key=[^"]*\)">.*/\1/p')"
-    
-    url="https://www.apkmirror.com$(req - $url | \
-        tr '\n' ' ' | \
-        sed -n 's/.*href="\(.*key=[^"]*\)">.*/\1/g;s#amp;##g;p')"
-    
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's/.*" href="\([^"]*\)"'$regexp'.*/\1/p')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's/.*href="\(.*key=[^"]*\)">.*/\1/p')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's/.*href="\(.*key=[^"]*\)">.*/\1/g;s#amp;##g;p')"
     req $name-v$version.apk $url
 }
 
 # X not work (maybe more)
 uptodown() {
-    name=$1
-    package=$2
-    
+    name=$1 package=$2
     version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
     version="${version:-$(req - 2>/dev/null "$url" | sed -n 's/.*class="version">\([^<]*\)<.*/\1/p' | get_latest_version)}"
-    
-    url=$(req - $url | \
-        tr '\n' ' ' | \
-        sed -n 's/.*data-url="\([^"]*\)".*'$version'<\/span>[^@]*@\([^<]*\).*/\1/p' | \
-        sed 's#/download/#/post-download/#g')
-    
+    url=$(req - $url | tr '\n' ' ' \
+                     | sed -n 's/.*data-url="\([^"]*\)".*'$version'<\/span>[^@]*@\([^<]*\).*/\1/p' \
+                     | sed 's#/download/#/post-download/#g')
     url="https://dw.uptodown.com/dwn/$(req - $url | sed -n 's/.*class="post-download".*data-url="\([^"]*\)".*/\1/p')"
-    
     req $name-v$version.apk $url
 }
 
 # Tiktok not work because not available version supported 
 apkpure() {
-    name=$1
-    package=$2
-    
+    name=$1 package=$2
     version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://apkpure.net/$name/$package/versions"
     version="${version:-$(req - $url | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
-    
     url="https://apkpure.net/$name/$package/download/$version"
     url=$(req - $url | sed -n 's/.*href="\(https:\/\/.*\.apkpure\..*\/.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
-    
     req $name-v$version.apk $url
 }
 
