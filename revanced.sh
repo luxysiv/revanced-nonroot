@@ -211,7 +211,7 @@ check_release_body() {
 patch() {
     apkmirror "google-inc" \
               "youtube" \
-              "com.google.android.youtube" \
+              "com.google.android.youtube"
     apply_patches "youtube"
     sign_patched_apk "youtube"
     create_github_release "youtube"
