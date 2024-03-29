@@ -46,10 +46,9 @@ apkmirror() {
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url="https://www.apkmirror.com$(req - $url | sed ':a;N;$!ba;s/\n/ /g' \
-                                               | sed -n 's/.*" href="\([^"]*\)".*'$arch'<\/div>[^@]*@\([^<]*\).*/\1/p')"
-    url="https://www.apkmirror.com$(req - $url | grep 'downloadButton' | sed -n 's/.*href="\([^"]*\)".*/\1/p;q')"
-    url="https://www.apkmirror.com$(req - $url | grep 'rel="nofollow"' | sed -n 's/.*href="\([^"]*\)".*/\1/g;s#amp;##g;p;q')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's/.*" href="\([^"]*\)".*'$arch'<\/div>[^@]*@\([^<]*\).*/\1/p')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's/.*href="\(.*key=[^"]*\)">.*/\1/p')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's/.*href="\(.*key=[^"]*\)">.*/\1/g;s#amp;##g;p')"
     req $name-v$version.apk $url
 }
 
@@ -59,7 +58,7 @@ uptodown() {
     version=$(req - 2>/dev/null "https://api.revanced.app/v2/patches/latest" | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
     version="${version:-$(req - 2>/dev/null "$url" | sed -n 's/.*class="version">\([^<]*\)<.*/\1/p' | get_latest_version)}"
-    url=$(req - $url | sed ':a;N;$!ba;s/\n/ /g' \
+    url=$(req - $url | tr '\n' ' ' \
                      | sed -n 's/.*data-url="\([^"]*\)".*'$version'<\/span>[^@]*@\([^<]*\).*/\1/p' \
                      | sed 's#/download/#/post-download/#g')
     url="https://dw.uptodown.com/dwn/$(req - $url | sed -n 's/.*class="post-download".*data-url="\([^"]*\)".*/\1/p')"
