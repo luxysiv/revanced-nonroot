@@ -22,7 +22,7 @@ get_supported_version() {
 }
 
 get_apkmirror_version() {
-    sed -n 's/.*Version.*"infoSlide-value">\([^<]*\)<\/span>.*/\1/p'
+    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | sed 20q
 }
 
 download_resources() {
@@ -42,7 +42,7 @@ download_resources() {
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {
     org="$1" name="$2" package="$3" arch="$4" 
-    local regexp='.*APK\(.*\)'$arch'\(.*\)nodpi<\/div>[^@]*@\([^<]*\)'
+    local regexp='.*APK\(.*\)'$arch'\(.*\)nodpi[^@]*@\([^<]*\)'
     version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
