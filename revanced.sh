@@ -47,9 +47,9 @@ apkmirror() {
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's/.*" href="\([^"]*\)"'$regexp'.*/\1/p')"
-    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's/.*href="\(.*key=[^"]*\)">.*/\1/p')"
-    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's/.*href="\(.*key=[^"]*\)">.*/\1/g;s#amp;##g;p')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's#.*" href="\([^"]*\)"'$regexp'.*#\1#p')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's#.*href="\(.*key=[^"]*\)">.*#\1#p')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's#.*href="\(.*key=[^"]*\)">.*#\1#g;s#amp;##g;p')"
     req $name-v$version.apk $url
 }
 
