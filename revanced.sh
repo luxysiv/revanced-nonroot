@@ -50,6 +50,7 @@ apkmirror() {
     url="https://www.apkmirror.com$( req - $url | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')"
     req $name-v$version.apk $url
 }
+
 # X not work (maybe more)
 uptodown() {
     name="$1" package="$2"
