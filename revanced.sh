@@ -21,10 +21,6 @@ get_supported_version() {
     jq -r --arg pkg_name "$1" '.. | objects | select(.name == "\($pkg_name)" and .versions != null) | .versions[-1]' | uniq
 }
 
-get_apkmirror_version() {
-    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | sed 20q
-}
-
 download_resources() {
     local revancedApiUrl="https://releases.revanced.app/tools"
     local response=$(req - 2>/dev/null "$revancedApiUrl")
@@ -43,7 +39,8 @@ download_resources() {
 apkmirror() {
     org="$1" name="$2" package="$3" arch="$4"
     version=$(req - 2>/dev/null $api | get_supported_version "$package")
-    version="${version:-$(req - "https://www.apkmirror.com/uploads/?appcategory=$name" | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version )}"
+    url="https://www.apkmirror.com/uploads/?appcategory=$name"
+    version="${version:-$(req - $url | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
     url="https://www.apkmirror.com$( req - $url | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' \
                                                 | pup -p --charset utf-8 ':parent-of(div:contains("'$arch'"))' \
@@ -53,7 +50,6 @@ apkmirror() {
     url="https://www.apkmirror.com$( req - $url | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')"
     req $name-v$version.apk $url
 }
-
 # X not work (maybe more)
 uptodown() {
     name="$1" package="$2"
