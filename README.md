@@ -4,7 +4,7 @@
   - [Revanced](https://github.com/revanced/revanced-patches/releases/latest)
 
 **Note**
-  - From now, ReVanced use [Revanced GsmCore](https://github.com/revanced/gmscore) to work.
+  - From now, ReVanced use [Revanced GmsCore](https://github.com/revanced/gmscore) to work.
 
-**Download page** (Take from latest release) (included [Revanced GsmCore](https://github.com/revanced/gmscore))
+**Download page** (Take from latest release) (included [Revanced GmsCore](https://github.com/revanced/gmscore))
   - https://luxysiv.github.io/revanced-nonroot/
