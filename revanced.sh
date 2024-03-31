@@ -42,7 +42,7 @@ download_resources() {
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {
     org="$1" name="$2" package="$3" arch="$4" 
-    local regexp='.*APK\(.*\)'$arch'\(.*\)nodpi[^@]*@\([^<]*\)'
+    local regexp='.*APK\(.*\)'$arch'\(.*\)nodpi<\/div>[^@]*@\([^<]*\)'
     version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
