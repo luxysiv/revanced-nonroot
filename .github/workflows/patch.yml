@@ -18,6 +18,11 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@main  
+    
+    - name: Install pup
+      run: |
+        sudo mv ./etc/pup /usr/local/bin/
+        chmod +x /usr/local/bin/pup
 
     - name: Patch Revanced
       run: bash revanced.sh
