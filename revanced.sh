@@ -56,7 +56,7 @@ uptodown() {
     name="$1" package="$2"
     version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
-    version="${version:-$(req - 2>/dev/null "$url" | pup 'div#versions-items-list > div span.version text{}' | get_latest_version)}"
+    version="${version:-$(req - 2>/dev/null $url | pup 'div#versions-items-list > div span.version text{}' | get_latest_version)}"
     url=$(req - $url | pup -p --charset utf-8 ':parent-of(span:contains("'$version'"))' \
                      | pup -p --charset utf-8 'div[data-url]' attr{data-url} \
                      | sed 's#/download/#/post-download/#g;q')
@@ -72,7 +72,7 @@ apkpure() {
     version="${version:-$(req - $url | pup 'div.ver-item > div.ver-item-n text{}' | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
     url=$(req - $url | pup -p --charset utf-8 'a[href*="APK/'$package'"] attr{href}')
-    req $name-v$version.apk "$url"
+    req $name-v$version.apk $url
 }
 
 apply_patches() {   
