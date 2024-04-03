@@ -35,43 +35,45 @@ download_resources() {
     done <<< "$assetUrls"
 }
 
+get_apkmirror_version() {
+    grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | sed 20q
+}
+
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {
-    org="$1" name="$2" package="$3" arch="$4"
+    org="$1" name="$2" package="$3" arch="$4" 
+    local regexp='.*APK\(.*\)'$arch'\(.*\)nodpi<\/div>[^@]*@\([^<]*\)'
     version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
-    version="${version:-$(req - $url | pup 'div.widget_appmanager_recentpostswidget h5 a.fontBlack text{}' | get_latest_version)}"
+    version="${version:-$(req - $url | get_apkmirror_version | get_latest_version)}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url="https://www.apkmirror.com$( req - $url | pup -p --charset utf-8 ':parent-of(:parent-of(span:contains("APK")))' \
-                                                | pup -p --charset utf-8 ':parent-of(div:contains("'$arch'"))' \
-                                                | pup -p --charset utf-8 ':parent-of(div:contains("nodpi")) a.accent_color attr{href}' \
-                                                | sed 1q )"
-    url="https://www.apkmirror.com$( req - $url | pup -p --charset utf-8 'a.downloadButton attr{href}')"
-    url="https://www.apkmirror.com$( req - $url | pup -p --charset utf-8 'a[data-google-vignette="false"][rel="nofollow"] attr{href}')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's#.*" href="\([^"]*\)"'$regexp'.*#\1#p')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's#.*href="\(.*key=[^"]*\)">.*#\1#p')"
+    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's#.*href="\(.*key=[^"]*\)">.*#\1#g;s#amp;##g;p')"
     req $name-v$version.apk $url
 }
 
 # X not work (maybe more)
 uptodown() {
-    name="$1" package="$2"
+    name=$1 package=$2
     version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
-    version="${version:-$(req - 2>/dev/null $url | pup 'div#versions-items-list > div span.version text{}' | get_latest_version)}"
-    url=$(req - $url | pup -p --charset utf-8 ':parent-of(span:contains("'$version'"))' \
-                     | pup -p --charset utf-8 'div[data-url]' attr{data-url} \
-                     | sed 's#/download/#/post-download/#g;q')
-    url="https://dw.uptodown.com/dwn/$(req - "$url" | pup -p --charset utf-8 'div[class="post-download"]' attr{data-url})"
+    version="${version:-$(req - 2>/dev/null "$url" | sed -n 's/.*class="version">\([^<]*\)<.*/\1/p' | get_latest_version)}"
+    url=$(req - $url | tr '\n' ' ' \
+                     | sed -n 's/.*data-url="\([^"]*\)".*'$version'<\/span>[^@]*@\([^<]*\).*/\1/p' \
+                     | sed 's#/download/#/post-download/#g')
+    url="https://dw.uptodown.com/dwn/$(req - $url | sed -n 's/.*class="post-download".*data-url="\([^"]*\)".*/\1/p')"
     req $name-v$version.apk $url
 }
 
 # Tiktok not work because not available version supported 
 apkpure() {
-    name="$1" package="$2"
+    name=$1 package=$2
     version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://apkpure.net/$name/$package/versions"
-    version="${version:-$(req - $url | pup 'div.ver-item > div.ver-item-n text{}' | get_latest_version)}"
+    version="${version:-$(req - $url | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
-    url=$(req - $url | pup -p --charset utf-8 'a[href*="APK/'$package'"] attr{href}')
+    url=$(req - $url | sed -n 's/.*href="\(.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
     req $name-v$version.apk $url
 }
 
