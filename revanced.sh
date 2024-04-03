@@ -14,7 +14,7 @@ basename() {
 }
 
 get_latest_version() {
-    grep -Evi 'alpha|beta' | grep -oPi '\b\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?\b' | sort -ur | grep -m 1 "."
+    grep -Evi 'alpha|beta' | grep -oPi '\b\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?\b' | sort -ur | sed -n '1p'
 }
 
 get_supported_version() {
