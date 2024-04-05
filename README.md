@@ -10,3 +10,8 @@
 
 **Download page** (Take from latest release) (included [Revanced GmsCore](https://github.com/revanced/gmscore))
   - https://luxysiv.github.io/revanced-nonroot/
+
+**Setting Patches**
+ - Edit in [./etc/app_name-patches.txt](./etc/)   
+ - **+ Patch_name** to include patch
+ - **- Patch_name** to exclude patch 
