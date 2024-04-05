@@ -1,3 +1,5 @@
+**This repository is controlled by Cloudflare Workers.  Will build 5 minutes after ReVanced patches release** 
+
 **YouTube Revanced** & **YouTube Music Revanced**
 
 **Latest release information**
