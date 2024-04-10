@@ -9,10 +9,6 @@ req() {
     --header="Content-Type: application/json"
 }
 
-basename() {
-    sed 's/.*\///' | sed 's/\.[^.]*$//'
-}
-
 get_latest_version() {
     grep -Evi 'alpha|beta' | grep -oPi '\b\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?\b' | sort -ur | sed -n '1p'
 }
@@ -120,10 +116,8 @@ sign_patched_apk() {
 create_github_release() {
     name="$1"
     local tagName=$(date +"%d-%m-%Y")
-    local patchFilePath=$(find . -type f -name "revanced-patches*.jar")
     local apkFilePath=$(find . -type f -name "$name-revanced*.apk")
-    local patchFileName=$(echo "$patchFilePath" | basename)
-    local apkFileName=$(echo "$apkFilePath" | basename).apk
+    local apkFileName=$(basename "$apkFilePath")
 
     # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
@@ -150,11 +144,14 @@ create_github_release() {
 
     else
         # Create a new release
+        body=$(echo -e "**ReVancedGms** is necessary to work")
+        body+="\n"
+        body+="Click [HERE](https://github.com/revanced/gmscore/releases/latest) to download **ReVancedGms**"
         local releaseData='{
-            "tag_name": "'"$tagName"'",
+            "tag_name": "'$tagName'",
             "target_commitish": "main",
-            "name": "Release '"$tagName"'",
-            "body": "'"$patchFileName"'"
+            "name": "Release '$tagName'",
+            "body": "'$body'"
         }'
         local newRelease=$( \
             wget -qO- \
@@ -175,32 +172,6 @@ create_github_release() {
     fi
 }
 
-check_release_body() {
-    # Compare body content with downloaded patch file name
-    if [ "$scriptRepoBody" != "$downloadedPatchFileName" ]; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-# Activity patches APK
-patch() {
-    apkmirror "google-inc" \
-              "youtube" \
-              "com.google.android.youtube"
-    apply_patches "youtube"
-    sign_patched_apk "youtube"
-    create_github_release "youtube"
-    apkmirror "google-inc" \
-              "youtube-music" \
-              "com.google.android.apps.youtube.music" \
-              "arm64-v8a"
-    apply_patches "youtube-music"
-    sign_patched_apk "youtube-music"
-    create_github_release "youtube-music"
-}
-
 # Main script 
 accessToken=$GITHUB_TOKEN
 repoName=$GITHUB_REPOSITORY_NAME
@@ -209,26 +180,19 @@ repoOwner=$GITHUB_REPOSITORY_OWNER
 # Perform download_repository_assets
 download_resources
 
-# Get the body content of the script repository release
-scriptRepoLatestRelease=$( \
-    wget -nv -O- 2>/dev/null \
-    "https://api.github.com/repos/$repoOwner/$repoName/releases/latest" \
-    --header="Authorization: token $accessToken" || true \
-)
-scriptRepoBody=$(echo "$scriptRepoLatestRelease" | jq -r '.body')
+# Patch YouTube 
+apkmirror "google-inc" \
+          "youtube" \
+          "com.google.android.youtube"
+apply_patches "youtube"
+sign_patched_apk "youtube"
+create_github_release "youtube"
 
-# Get the downloaded patch file name
-downloadedPatchFileName=$(ls -1 revanced-patches*.jar | basename)
-
-# Patch if no release
-if [ -z "$scriptRepoBody" ]; then
-    patch
-    exit 0
-fi
-
-# Check if the body content matches the downloaded patch file name
-if check_release_body ; then
-    patch
-else
-    echo -e "\e[91mSkipping because patched\e[0m"
-fi
+# Patch YouTube Music 
+apkmirror "google-inc" \
+          "youtube-music" \
+          "com.google.android.apps.youtube.music" \
+          "arm64-v8a"
+apply_patches "youtube-music"
+sign_patched_apk "youtube-music"
+create_github_release "youtube-music"
