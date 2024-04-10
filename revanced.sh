@@ -118,6 +118,9 @@ create_github_release() {
     local tagName=$(date +"%d-%m-%Y")
     local apkFilePath=$(find . -type f -name "$name-revanced*.apk")
     local apkFileName=$(basename "$apkFilePath")
+    local patchver=$(ls -1 revanced-patches*.jar | grep -oP '\d+(\.\d+)+')
+    local integrationsver=$(ls -1 revanced-integrations*.apk | grep -oP '\d+(\.\d+)+')
+    local cliver=$(ls -1 revanced-cli*.jar | grep -oP '\d+(\.\d+)+')
 
     # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
@@ -144,9 +147,19 @@ create_github_release() {
 
     else
         # Create a new release
-        body=$(echo -e "**ReVancedGms** is necessary to work")
+        body=$(echo -e "# Build Tools:")
         body+="\n"
-        body+="Click [HERE](https://github.com/revanced/gmscore/releases/latest) to download **ReVancedGms**"
+        body+=" - **ReVanced Patches:** $patchver"
+        body+="\n"
+        body+=" - **ReVanced Integrations:** $integrationsver"
+        body+="\n"
+        body+=" - **ReVanced CLI:** $cliver"
+        body+="\n"
+        body+="# Note:"
+        body+="\n"
+        body+="**ReVancedGms** is **necessary** to work"
+        body+="\n"
+        body+=" - Click [HERE](https://github.com/revanced/gmscore/releases/latest) to **download**"
         local releaseData='{
             "tag_name": "'$tagName'",
             "target_commitish": "main",
