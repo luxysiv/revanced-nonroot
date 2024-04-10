@@ -115,7 +115,6 @@ sign_patched_apk() {
 
 create_github_release() {
     name="$1"
-    local tagName=$(date +"%d-%m-%Y")
     local apkFilePath=$(find . -type f -name "$name-revanced*.apk")
     local apkFileName=$(basename "$apkFilePath")
     local patchver=$(ls -1 revanced-patches*.jar | grep -oP '\d+(\.\d+)+')
@@ -149,11 +148,11 @@ create_github_release() {
         # Create a new release
         body=$(echo -e "# Build Tools:")
         body+="\n"
-        body+=" - **ReVanced Patches:** $patchver"
+        body+=" - **ReVanced Patches:** *version* **$patchver**"
         body+="\n"
-        body+=" - **ReVanced Integrations:** $integrationsver"
+        body+=" - **ReVanced Integrations:** *version* **$integrationsver**"
         body+="\n"
-        body+=" - **ReVanced CLI:** $cliver"
+        body+=" - **ReVanced CLI:** *version* **$cliver**"
         body+="\n"
         body+="# Note:"
         body+="\n"
@@ -161,9 +160,9 @@ create_github_release() {
         body+="\n"
         body+=" - Click [HERE](https://github.com/revanced/gmscore/releases/latest) to **download**"
         local releaseData='{
-            "tag_name": "'$tagName'",
+            "tag_name": "'$patchver'",
             "target_commitish": "main",
-            "name": "Release '$tagName'",
+            "name": "Revanced '$patchver'",
             "body": "'$body'"
         }'
         local newRelease=$( \
