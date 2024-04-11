@@ -148,11 +148,11 @@ create_github_release() {
         # Create a new release
         body=$(echo -e "# Build Tools:")
         body+="\n"
-        body+=" - **ReVanced Patches:** *version* **$patchver**"
+        body+=" - **ReVanced Patches:** *v$patchver*"
         body+="\n"
-        body+=" - **ReVanced Integrations:** *version* **$integrationsver**"
+        body+=" - **ReVanced Integrations:** *v$integrationsver*"
         body+="\n"
-        body+=" - **ReVanced CLI:** *version* **$cliver**"
+        body+=" - **ReVanced CLI:** *v$cliver*"
         body+="\n"
         body+="# Note:"
         body+="\n"
@@ -160,9 +160,9 @@ create_github_release() {
         body+="\n"
         body+=" - Click [HERE](https://github.com/revanced/gmscore/releases/latest) to **download**"
         local releaseData='{
-            "tag_name": "'$patchver'",
+            "tag_name": "v'$patchver'",
             "target_commitish": "main",
-            "name": "Revanced '$patchver'",
+            "name": "Revanced v'$patchver'",
             "body": "'$body'"
         }'
         local newRelease=$( \
