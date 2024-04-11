@@ -130,7 +130,7 @@ create_github_release() {
     local existingRelease=$( \
         wget -qO- \
         --header="Authorization: token $accessToken" \
-        "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName" \
+        "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/v$patchver" \
     )
 
     if [ -n "$existingRelease" ]; then
