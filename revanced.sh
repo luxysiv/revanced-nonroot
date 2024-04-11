@@ -115,11 +115,12 @@ sign_patched_apk() {
 
 create_github_release() {
     name="$1"
-    local apkFilePath=$(find . -type f -name "$name-revanced*.apk")
-    local apkFileName=$(basename "$apkFilePath")
-    local patchver=$(ls -1 revanced-patches*.jar | grep -oP '\d+(\.\d+)+')
-    local integrationsver=$(ls -1 revanced-integrations*.apk | grep -oP '\d+(\.\d+)+')
-    local cliver=$(ls -1 revanced-cli*.jar | grep -oP '\d+(\.\d+)+')
+    apkFilePath=$(find . -type f -name "$name-revanced*.apk")
+    apkFileName=$(basename "$apkFilePath")
+    patchver=$(ls -1 revanced-patches*.jar | grep -oP '\d+(\.\d+)+')
+    integrationsver=$(ls -1 revanced-integrations*.apk | grep -oP '\d+(\.\d+)+')
+    cliver=$(ls -1 revanced-cli*.jar | grep -oP '\d+(\.\d+)+')
+    tagName="v$patchver"
 
     # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
@@ -127,53 +128,50 @@ create_github_release() {
     fi
 
     # Check if the release with the same tag already exists
-    local existingRelease=$( \
+    existingRelease=$( \
         wget -qO- \
         --header="Authorization: token $accessToken" \
-        "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/v$patchver" \
+        "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName" \
     )
 
     if [ -n "$existingRelease" ]; then
-        local existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
+        existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
 
-        # Upload additional file to existing release
-        local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId/assets?name=$apkFileName"
-        wget -q \
-        --header="Authorization: token $accessToken" \
-        --header="Content-Type: application/zip" \
-        --post-file="$apkFilePath" \
-        -O /dev/null "$uploadUrlApk"
-
+        uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId/assets?name=$apkFileName"
     else
         # Create a new release
         body=$(echo -e "# Build Tools:")
-        body+="\n - **ReVanced Patches:** *v$patchver*\n - **ReVanced Integrations:** *v$integrationsver*\n - **ReVanced CLI:** *v$cliver*\n"
+        body+="\n - **ReVanced Patches:** *v$patchver*"
+        body+="\n - **ReVanced Integrations:** *v$integrationsver*"
+        body+="\n - **ReVanced CLI:** *v$cliver*\n"
         body+="# Note:\n"
         body+="**ReVancedGms** is **necessary** to work\n"
         body+=" - Click [HERE](https://github.com/revanced/gmscore/releases/latest) to **download**"
         local releaseData='{
-            "tag_name": "v'$patchver'",
+            "tag_name": "'$tagName'",
             "target_commitish": "main",
-            "name": "Revanced v'$patchver'",
+            "name": "Revanced '$tagName'",
             "body": "'$body'"
         }'
-        local newRelease=$( \
+            
+        newRelease=$( \
             wget -qO- \
             --post-data="$releaseData" \
             --header="Authorization: token $accessToken" \
             --header="Content-Type: application/json" \
             "https://api.github.com/repos/$repoOwner/$repoName/releases" \
         )
-        local releaseId=$(echo "$newRelease" | jq -r ".id")
+        releaseId=$(echo "$newRelease" | jq -r ".id")
 
-        # Upload APK file
-        local uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
-        wget -q \
+        uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
+    fi
+
+    # Upload APK file
+    wget -q \
         --header="Authorization: token $accessToken" \
         --header="Content-Type: application/zip" \
         --post-file="$apkFilePath" \
         -O /dev/null "$uploadUrlApk"
-    fi
 }
 
 # Main script 
