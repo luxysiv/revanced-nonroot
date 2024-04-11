@@ -146,7 +146,7 @@ create_github_release() {
 
     else
         # Create a new release
-        body=$(echo -e "# Build Tools:\n")
+        body=$(echo -e "# Build Tools:\n\n")
         body+=" - **ReVanced Patches:** *v$patchver*\n - **ReVanced Integrations:** *v$integrationsver*\n - **ReVanced CLI:** *v$cliver*\n"
         body+="# Note:\n"
         body+="**ReVancedGms** is **necessary** to work\n"
