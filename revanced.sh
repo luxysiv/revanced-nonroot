@@ -146,18 +146,10 @@ create_github_release() {
 
     else
         # Create a new release
-        body=$(echo -e "# Build Tools:")
-        body+="\n"
-        body+=" - **ReVanced Patches:** *v$patchver*"
-        body+="\n"
-        body+=" - **ReVanced Integrations:** *v$integrationsver*"
-        body+="\n"
-        body+=" - **ReVanced CLI:** *v$cliver*"
-        body+="\n"
-        body+="# Note:"
-        body+="\n"
-        body+="**ReVancedGms** is **necessary** to work"
-        body+="\n"
+        body=$(echo -e "# Build Tools:\n")
+        body+=" - **ReVanced Patches:** *v$patchver*\n - **ReVanced Integrations:** *v$integrationsver*\n - **ReVanced CLI:** *v$cliver*\n"
+        body+="# Note:\n"
+        body+="**ReVancedGms** is **necessary** to work\n"
         body+=" - Click [HERE](https://github.com/revanced/gmscore/releases/latest) to **download**"
         local releaseData='{
             "tag_name": "v'$patchver'",
