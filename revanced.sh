@@ -140,13 +140,13 @@ create_github_release() {
         uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId/assets?name=$apkFileName"
     else
         # Create a new release
-        body=$(echo -e "# Build Tools:")
+        body="# Build Tools:"
         body+="\n - **ReVanced Patches:** *v$patchver*"
         body+="\n - **ReVanced Integrations:** *v$integrationsver*"
-        body+="\n - **ReVanced CLI:** *v$cliver*\n"
-        body+="# Note:\n"
-        body+="**ReVancedGms** is **necessary** to work\n"
-        body+=" - Click [HERE](https://github.com/revanced/gmscore/releases/latest) to **download**"
+        body+="\n - **ReVanced CLI:** *v$cliver*"
+        body+="\n\n# Note:"
+        body+="\n**ReVancedGms** is **necessary** to work"
+        body+="\n - Click [HERE](https://github.com/revanced/gmscore/releases/latest) to **download**"
         local releaseData='{
             "tag_name": "'$tagName'",
             "target_commitish": "main",
