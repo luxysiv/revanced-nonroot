@@ -1,5 +1,4 @@
 #!/bin/bash
-api="https://api.revanced.app/v2/patches/latest"
 
 req() {
     wget -nv -O "$1" "$2" \
@@ -14,21 +13,17 @@ get_latest_version() {
 }
 
 get_supported_version() {
-    jq -r --arg pkg_name "$1" '.. | objects | select(.name == "\($pkg_name)" and .versions != null) | .versions[-1]' | uniq
+    jq -r --arg pkg_name "$1" '.. | objects | select(.name == "\($pkg_name)" and .versions != null) | .versions[-1]' patches.json | uniq
 }
 
 download_resources() {
-    local revancedApiUrl="https://releases.revanced.app/tools"
-    local response=$(req - 2>/dev/null "$revancedApiUrl")
-
-    local assetUrls=$( \
-        echo "$response" | \
-        jq -r '.tools[] | select(.name | test("revanced-(patches|cli).*jar$|revanced-integrations.*apk$")) | .browser_download_url, .name' \
-    )
-
-    while read -r downloadUrl && read -r assetName; do
-        req "$assetName" "$downloadUrl" 
-    done <<< "$assetUrls"
+    for repo in revanced-patches revanced-cli revanced-integrations; do
+        githubApiUrl="https://api.github.com/repos/revanced/$repo/releases/latest"
+        assetUrls=$(req - "$githubApiUrl" | jq -r '.assets[] | "\(.browser_download_url) \(.name)"')
+        while read -r downloadUrl assetName; do
+            req "$assetName" "$downloadUrl" 
+        done <<< "$assetUrls"
+    done
 }
 
 get_apkmirror_version() {
@@ -39,7 +34,7 @@ get_apkmirror_version() {
 apkmirror() {
     org="$1" name="$2" package="$3" arch="$4" 
     local regexp='.*APK\(.*\)'$arch'\(.*\)nodpi<\/div>[^@]*@\([^<]*\)'
-    version=$(req - 2>/dev/null $api | get_supported_version "$package")
+    version=$(get_supported_version "$package")
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version)}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
@@ -52,7 +47,7 @@ apkmirror() {
 # X not work (maybe more)
 uptodown() {
     name=$1 package=$2
-    version=$(req - 2>/dev/null $api | get_supported_version "$package")
+    version=$(get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
     version="${version:-$(req - 2>/dev/null "$url" | sed -n 's/.*class="version">\([^<]*\)<.*/\1/p' | get_latest_version)}"
     url=$(req - $url | tr '\n' ' ' \
@@ -65,7 +60,7 @@ uptodown() {
 # Tiktok not work because not available version supported 
 apkpure() {
     name=$1 package=$2
-    version=$(req - 2>/dev/null $api | get_supported_version "$package")
+    version=$(get_supported_version "$package")
     url="https://apkpure.net/$name/$package/versions"
     version="${version:-$(req - $url | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
