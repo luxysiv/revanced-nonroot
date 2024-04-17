@@ -2,11 +2,8 @@
 source ./etc/utils.sh
 
 # Main script 
-accessToken=$GITHUB_TOKEN
-repoName=$GITHUB_REPOSITORY_NAME
-repoOwner=$GITHUB_REPOSITORY_OWNER
-
-# I prefer APKmirror but some time It's failure. So I use Uptodown. APKmirror scraper still works fine
+# I prefer APKmirror but some time It's failure. So I use Uptodown.
+# APKmirror scraper still works fine
 
 # Perform download_repository_assets
 download_resources
