@@ -19,13 +19,12 @@ get_supported_version() {
 download_resources() {
     for repo in revanced-patches revanced-cli revanced-integrations; do
         githubApiUrl="https://api.github.com/repos/revanced/$repo/releases/latest"
-        assetUrls=$(req - "$githubApiUrl" | jq -r '.assets[] | "\(.browser_download_url) \(.name)"')
+        assetUrls=$(req - "$githubApiUrl" | jq -r '.assets[] | select(.name | endswith(".asc") | not) | "\(.browser_download_url) \(.name)"')
         while read -r downloadUrl assetName; do
             req "$assetName" "$downloadUrl" 
         done <<< "$assetUrls"
     done
 }
-
 get_apkmirror_version() {
     grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | sed 20q
 }
@@ -125,14 +124,14 @@ create_github_release() {
     # Check if the release with the same tag already exists
     existingRelease=$( \
         wget -qO- \
-        --header="Authorization: token $accessToken" \
-        "https://api.github.com/repos/$repoOwner/$repoName/releases/tags/$tagName" \
+        --header="Authorization: token $GITHUB_TOKEN" \
+        "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$tagName" \
     )
 
     if [ -n "$existingRelease" ]; then
         existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
 
-        uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$existingReleaseId/assets?name=$apkFileName"
+        uploadUrlApk="https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$existingReleaseId/assets?name=$apkFileName"
     else
         # Create a new release
         body="# Build Tools:"
@@ -152,18 +151,18 @@ create_github_release() {
         newRelease=$( \
             wget -qO- \
             --post-data="$releaseData" \
-            --header="Authorization: token $accessToken" \
+            --header="Authorization: token $GITHUB_TOKEN" \
             --header="Content-Type: application/json" \
-            "https://api.github.com/repos/$repoOwner/$repoName/releases" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
         )
         releaseId=$(echo "$newRelease" | jq -r ".id")
 
-        uploadUrlApk="https://uploads.github.com/repos/$repoOwner/$repoName/releases/$releaseId/assets?name=$apkFileName"
+        uploadUrlApk="https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$releaseId/assets?name=$apkFileName"
     fi
 
     # Upload APK file
     wget -q \
-        --header="Authorization: token $accessToken" \
+        --header="Authorization: token $GITHUB_TOKEN" \
         --header="Content-Type: application/zip" \
         --post-file="$apkFilePath" \
         -O /dev/null "$uploadUrlApk"
