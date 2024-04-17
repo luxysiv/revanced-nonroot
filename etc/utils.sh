@@ -1,4 +1,9 @@
 #!/bin/bash
+# Script make by Mạnh Dương
+
+gh_req() {
+    wget -qO- --header="Authorization: token $GITHUB_TOKEN" "$@"
+}
 
 req() {
     wget -nv -O "$1" "$2" \
@@ -19,7 +24,8 @@ get_supported_version() {
 download_resources() {
     for repo in revanced-patches revanced-cli revanced-integrations; do
         githubApiUrl="https://api.github.com/repos/revanced/$repo/releases/latest"
-        assetUrls=$(req - "$githubApiUrl" | jq -r '.assets[] | select(.name | endswith(".asc") | not) | "\(.browser_download_url) \(.name)"')
+        page=$(req - 2>/dev/null $githubApiUrl)
+        assetUrls=$(echo $page | jq -r '.assets[] | select(.name | endswith(".asc") | not) | "\(.browser_download_url) \(.name)"')
         while read -r downloadUrl assetName; do
             req "$assetName" "$downloadUrl" 
         done <<< "$assetUrls"
@@ -48,7 +54,7 @@ uptodown() {
     name=$1 package=$2
     version=$(get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
-    version="${version:-$(req - 2>/dev/null "$url" | sed -n 's/.*class="version">\([^<]*\)<.*/\1/p' | get_latest_version)}"
+    version="${version:-$(req - 2>/dev/null $url | sed -n 's/.*class="version">\([^<]*\)<.*/\1/p' | get_latest_version)}"
     url=$(req - $url | tr '\n' ' ' \
                      | sed -n 's/.*data-url="\([^"]*\)".*'$version'<\/span>[^@]*@\([^<]*\).*/\1/p' \
                      | sed 's#/download/#/post-download/#g')
@@ -109,6 +115,8 @@ sign_patched_apk() {
 
 create_github_release() {
     name="$1"
+    apiReleases="https://api.github.com/repos/$GITHUB_REPOSITORY/releases"
+    uploadRelease="https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases"
     apkFilePath=$(find . -type f -name "$name-revanced*.apk")
     apkFileName=$(basename "$apkFilePath")
     patchver=$(ls -1 revanced-patches*.jar | grep -oP '\d+(\.\d+)+')
@@ -116,50 +124,22 @@ create_github_release() {
     cliver=$(ls -1 revanced-cli*.jar | grep -oP '\d+(\.\d+)+')
     tagName="v$patchver"
 
-    # Only release with APK file
     if [ ! -f "$apkFilePath" ]; then
         exit
     fi
 
-    # Check if the release with the same tag already exists
-    existingRelease=$( \
-        wget -qO- \
-        --header="Authorization: token $GITHUB_TOKEN" \
-        "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$tagName" \
-    )
+    existingRelease=$(gh_req "$apiReleases/tags/$tagName")
 
     if [ -n "$existingRelease" ]; then
         existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
+        uploadUrlApk="$uploadRelease/$existingReleaseId/assets?name=$apkFileName"
 
-        # Remove existing assets with the same name
-        existingAssets=$( \
-            wget -qO- \
-            --header="Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$tagName" \
-            | jq -r '.assets[].name' \
-        )
-
-        for existingAsset in $existingAssets; do
-            if [ "$existingAsset" == "$apkFileName" ]; then
-                assetId=$( \
-                    wget -qO- \
-                    --header="Authorization: token $GITHUB_TOKEN" \
-                    "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$tagName" \
-                    | jq -r '.assets[] | select(.name == "'"$apkFileName"'") | .id' \
-                )
-                # Delete the existing asset
-                wget -q \
-                    --header="Authorization: token $GITHUB_TOKEN" \
-                    --method=DELETE \
-                    -O /dev/null \
-                    "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/assets/$assetId"
-                echo "Existing asset '$apkFileName' has been deleted."
-            fi
+        for existingAsset in $(echo "$existingRelease" | jq -r '.assets[].name'); do
+            [ "$existingAsset" == "$apkFileName" ] && \
+                assetId=$(echo "$existingRelease" | jq -r '.assets[] | select(.name == "'"$apkFileName"'") | .id') && \
+                gh_req --method=DELETE "$apiReleases/assets/$assetId"
         done
-
-        uploadUrlApk="https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$existingReleaseId/assets?name=$apkFileName"
     else
-        # Create a new release
         body="# Build Tools:"
         body+="\n - **ReVanced Patches:** *v$patchver*"
         body+="\n - **ReVanced Integrations:** *v$integrationsver*"
@@ -173,24 +153,10 @@ create_github_release() {
             "name": "Revanced '$tagName'",
             "body": "'$body'"
         }'
-            
-        newRelease=$( \
-            wget -qO- \
-            --post-data="$releaseData" \
-            --header="Authorization: token $GITHUB_TOKEN" \
-            --header="Content-Type: application/json" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
-        )
+        newRelease=$(gh_req --post-data="$releaseData" --header="Content-Type: application/json" "$apiReleases")
         releaseId=$(echo "$newRelease" | jq -r ".id")
-
-        uploadUrlApk="https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$releaseId/assets?name=$apkFileName"
+        uploadUrlApk="$uploadRelease/$releaseId/assets?name=$apkFileName"
     fi
 
-    # Upload APK file
-    wget -q \
-        --header="Authorization: token $GITHUB_TOKEN" \
-        --header="Content-Type: application/zip" \
-        --post-file="$apkFilePath" \
-        -O /dev/null \
-        "$uploadUrlApk"
+    gh_req &>/dev/null --header="Content-Type: application/zip" --post-file="$apkFilePath" "$uploadUrlApk"
 }
