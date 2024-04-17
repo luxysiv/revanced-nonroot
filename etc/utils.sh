@@ -131,6 +131,32 @@ create_github_release() {
     if [ -n "$existingRelease" ]; then
         existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
 
+        # Remove existing assets with the same name
+        existingAssets=$( \
+            wget -qO- \
+            --header="Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$tagName" \
+            | jq -r '.assets[].name' \
+        )
+
+        for existingAsset in $existingAssets; do
+            if [ "$existingAsset" == "$apkFileName" ]; then
+                assetId=$( \
+                    wget -qO- \
+                    --header="Authorization: token $GITHUB_TOKEN" \
+                    "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$tagName" \
+                    | jq -r '.assets[] | select(.name == "'"$apkFileName"'") | .id' \
+                )
+                # Delete the existing asset
+                wget -q \
+                    --header="Authorization: token $GITHUB_TOKEN" \
+                    --method=DELETE \
+                    -O /dev/null \
+                    "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/assets/$assetId"
+                echo "Existing asset '$apkFileName' has been deleted."
+            fi
+        done
+
         uploadUrlApk="https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$existingReleaseId/assets?name=$apkFileName"
     else
         # Create a new release
@@ -165,5 +191,6 @@ create_github_release() {
         --header="Authorization: token $GITHUB_TOKEN" \
         --header="Content-Type: application/zip" \
         --post-file="$apkFilePath" \
-        -O /dev/null "$uploadUrlApk"
+        -O /dev/null \
+        "$uploadUrlApk"
 }
