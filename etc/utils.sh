@@ -129,7 +129,7 @@ create_release_body() {
 
 ## Note:
 **ReVancedGms** is **necessary** to work. 
-Please **download** it from [HERE](https://github.com/revanced/gmscore/releases/latest).
+- Please **download** it from [HERE](https://github.com/revanced/gmscore/releases/latest).
 EOF
 
     releaseData=$(jq -n \
