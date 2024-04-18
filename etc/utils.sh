@@ -113,45 +113,21 @@ sign_patched_apk() {
     unset version
 }
 
-create_release_body() {
-    patchver=$(ls -1 revanced-patches*.jar | grep -oP '\d+(\.\d+)+')
-    integrationsver=$(ls -1 revanced-integrations*.apk | grep -oP '\d+(\.\d+)+')
-    cliver=$(ls -1 revanced-cli*.jar | grep -oP '\d+(\.\d+)+')
-    tagName="v$patchver"
-
-    read -r -d '' body << EOF
-# Release Notes
-
-## Build Tools:
-- **ReVanced Patches:** v$patchver
-- **ReVanced Integrations:** v$integrationsver
-- **ReVanced CLI:** v$cliver
-
-## Note:
-**ReVancedGms** is **necessary** to work. 
-- Please **download** it from [HERE](https://github.com/revanced/gmscore/releases/latest).
-EOF
-
-    releaseData=$(jq -n \
-    --arg tag_name "$tagName" \
-    --arg target_commitish "main" \
-    --arg name "Revanced $tagName" \
-    --arg body "$body" \
-    '{ tag_name: $tag_name, target_commitish: $target_commitish, name: $name, body: $body }')
-}
-
 create_github_release() {
     name="$1"
     apiReleases="https://api.github.com/repos/$GITHUB_REPOSITORY/releases"
     uploadRelease="https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases"
     apkFilePath=$(find . -type f -name "$name-revanced*.apk")
     apkFileName=$(basename "$apkFilePath")
+    patchver=$(ls -1 revanced-patches*.jar | grep -oP '\d+(\.\d+)+')
+    integrationsver=$(ls -1 revanced-integrations*.apk | grep -oP '\d+(\.\d+)+')
+    cliver=$(ls -1 revanced-cli*.jar | grep -oP '\d+(\.\d+)+')
+    tagName="v$patchver"
 
     if [ ! -f "$apkFilePath" ]; then
         exit
     fi
 
-    create_release_body
     existingRelease=$(gh_req "$apiReleases/tags/$tagName")
 
     if [ -n "$existingRelease" ]; then
@@ -164,6 +140,26 @@ create_github_release() {
                 gh_req --method=DELETE "$apiReleases/assets/$assetId"
         done
     else
+        read -r -d '' body << EOF
+# Release Notes
+
+## Build Tools:
+- **ReVanced Patches:** v$patchver
+- **ReVanced Integrations:** v$integrationsver
+- **ReVanced CLI:** v$cliver
+
+## Note:
+**ReVancedGms** is **necessary** to work. 
+- Please **download** it from [HERE](https://github.com/revanced/gmscore/releases/latest).
+EOF
+
+        releaseData=$(jq -n \
+        --arg tag_name "$tagName" \
+        --arg target_commitish "main" \
+        --arg name "Revanced $tagName" \
+        --arg body "$body" \
+       '{ tag_name: $tag_name, target_commitish: $target_commitish, name: $name, body: $body }')
+        }
         newRelease=$(gh_req --post-data="$releaseData" --header="Content-Type: application/json" "$apiReleases")
         releaseId=$(echo "$newRelease" | jq -r ".id")
         uploadUrlApk="$uploadRelease/$releaseId/assets?name=$apkFileName"
