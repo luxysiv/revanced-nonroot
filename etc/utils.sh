@@ -159,7 +159,6 @@ EOF
         --arg name "Revanced $tagName" \
         --arg body "$body" \
        '{ tag_name: $tag_name, target_commitish: $target_commitish, name: $name, body: $body }')
-        }
         newRelease=$(gh_req --post-data="$releaseData" --header="Content-Type: application/json" "$apiReleases")
         releaseId=$(echo "$newRelease" | jq -r ".id")
         uploadUrlApk="$uploadRelease/$releaseId/assets?name=$apkFileName"
