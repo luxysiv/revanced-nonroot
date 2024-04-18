@@ -113,6 +113,29 @@ sign_patched_apk() {
     unset version
 }
 
+create_body_release() {
+    body=$(cat <<EOF
+# Release Notes
+
+## Build Tools:
+- **ReVanced Patches:** v$patchver
+- **ReVanced Integrations:** v$integrationsver
+- **ReVanced CLI:** v$cliver
+
+## Note:
+**ReVancedGms** is **necessary** to work. 
+- Please **download** it from [HERE](https://github.com/revanced/gmscore/releases/latest).
+EOF
+)
+
+    releaseData=$(jq -n \
+      --arg tag_name "$tagName" \
+      --arg target_commitish "main" \
+      --arg name "Revanced $tagName" \
+      --arg body "$body" \
+      '{ tag_name: $tag_name, target_commitish: $target_commitish, name: $name, body: $body }')
+}
+
 create_github_release() {
     name="$1"
     apiReleases="https://api.github.com/repos/$GITHUB_REPOSITORY/releases"
@@ -140,25 +163,7 @@ create_github_release() {
                 gh_req --method=DELETE "$apiReleases/assets/$assetId"
         done
     else
-        read -r -d '' body << EOF
-# Release Notes
-
-## Build Tools:
-- **ReVanced Patches:** v$patchver
-- **ReVanced Integrations:** v$integrationsver
-- **ReVanced CLI:** v$cliver
-
-## Note:
-**ReVancedGms** is **necessary** to work. 
-- Please **download** it from [HERE](https://github.com/revanced/gmscore/releases/latest).
-EOF
-
-        releaseData=$(jq -n \
-        --arg tag_name "$tagName" \
-        --arg target_commitish "main" \
-        --arg name "Revanced $tagName" \
-        --arg body "$body" \
-       '{ tag_name: $tag_name, target_commitish: $target_commitish, name: $name, body: $body }')
+        create_body_release 
         newRelease=$(gh_req --post-data="$releaseData" --header="Content-Type: application/json" "$apiReleases")
         releaseId=$(echo "$newRelease" | jq -r ".id")
         uploadUrlApk="$uploadRelease/$releaseId/assets?name=$apkFileName"
