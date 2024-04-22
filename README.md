@@ -9,7 +9,7 @@
   - From now, ReVanced use [Revanced GmsCore](https://github.com/revanced/gmscore) to work.
 
 **Download page** (Take from latest release) (included [Revanced GmsCore](https://github.com/revanced/gmscore))
-  - https://revanced-nonroot.timie.workers.dev
+  - https://revanced-nonroot.pages.dev
 
 **Setting Patches**
  - Edit in [./etc/app_name-patches.txt](./etc/)   
