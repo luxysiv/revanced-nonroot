@@ -7,8 +7,9 @@ gh_req() {
 
 req() {
     wget -nv -O "$@" \
-    --header="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
-                          AppleWebKit/537.36 (HTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36" \
+    --header="User-Agent: Mozilla/5.0 (Linux; Android 10; K) \
+                          AppleWebKit/537.36 (KHTML, like Gecko) \
+                          Chrome/126.0.0.0 Mobile Safari/537.36 EdgA/126.0.0.0" \
     --header="Authorization: Basic YXBpLWFwa3VwZGF0ZXI6cm01cmNmcnVVakt5MDRzTXB5TVBKWFc4" \
     --header="Content-Type: application/json"
 }
