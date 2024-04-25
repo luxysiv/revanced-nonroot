@@ -10,7 +10,7 @@
 
 **Download page** (Take from latest release) (included [Revanced GmsCore](https://github.com/revanced/gmscore))
   - Eng page: https://revanced-nonroot.pages.dev
-  - Vi page: https://rv-nonroot.pages.dev/
+  - Vi page: https://revanced-nonroot.vercel.app
 
 **Setting Patches**
  - Edit in [./etc/app_name-patches.txt](./etc/)   
