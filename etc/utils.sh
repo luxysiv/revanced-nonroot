@@ -1,10 +1,12 @@
 #!/bin/bash
 # Script make by Mạnh Dương
 
+# Make requests to Github API
 gh_req() {
     wget -qO- --header="Authorization: token $GITHUB_TOKEN" "$@"
 }
 
+# Make fake requests with User-Agent and Authorization 
 req() {
     wget -nv -O "$@" \
     --header="User-Agent: Mozilla/5.0 (Linux; Android 10; K) \
@@ -14,15 +16,18 @@ req() {
     --header="Content-Type: application/json"
 }
 
+# Get highest version (Just compatible with my way of getting versions code)
 get_latest_version() {
     grep -Evi 'alpha|beta' | grep -oPi '\b\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?\b' | sort -ur | sed -n '1p'
 }
 
+# Read highest supported versions from Revanced 
 get_supported_version() {
     pkg_name="$1"
     jq -r '.. | objects | select(.name == "'$pkg_name'" and .versions != null) | .versions[-1]' patches.json | uniq
 }
 
+# Download necessary resources to patch from Github latest release 
 download_resources() {
     for repo in revanced-patches revanced-cli revanced-integrations; do
         githubApiUrl="https://api.github.com/repos/revanced/$repo/releases/latest"
@@ -33,6 +38,8 @@ download_resources() {
         done <<< "$assetUrls"
     done
 }
+
+# Get 20 versions of application on APKmirror pages 
 get_apkmirror_version() {
     grep 'fontBlack' | sed -n 's/.*>\(.*\)<\/a> <\/h5>.*/\1/p' | sed 20q
 }
@@ -75,6 +82,7 @@ apkpure() {
     req $name-v$version.apk $url
 }
 
+# Apply patches with Include and Exclude Patches
 apply_patches() {   
     name="$1"
     # Read patches from file
@@ -100,6 +108,7 @@ apply_patches() {
     unset excludePatches includePatches
 }
 
+# Sign APK with FOSS keystore(https://github.com/tytydraco/public-keystore)
 sign_patched_apk() {   
     name="$1"
     # Sign the patched APK
@@ -115,6 +124,7 @@ sign_patched_apk() {
     unset version
 }
 
+# Make body Release 
 create_body_release() {
     body=$(cat <<EOF
 # Release Notes
@@ -138,6 +148,7 @@ EOF
       '{ tag_name: $tag_name, target_commitish: $target_commitish, name: $name, body: $body }')
 }
 
+# Release Revanced APK
 create_github_release() {
     name="$1"
     apiReleases="https://api.github.com/repos/$GITHUB_REPOSITORY/releases"
@@ -149,27 +160,32 @@ create_github_release() {
     cliver=$(ls -1 revanced-cli*.jar | grep -oP '\d+(\.\d+)+')
     tagName="v$patchver"
 
+    # Make sure release with APK
     if [ ! -f "$apkFilePath" ]; then
         exit
     fi
 
     existingRelease=$(gh_req "$apiReleases/tags/$tagName")
 
+    # Add more assets release with same tag name
     if [ -n "$existingRelease" ]; then
         existingReleaseId=$(echo "$existingRelease" | jq -r ".id")
         uploadUrlApk="$uploadRelease/$existingReleaseId/assets?name=$apkFileName"
 
+        # Delete assest release if same name upload 
         for existingAsset in $(echo "$existingRelease" | jq -r '.assets[].name'); do
             [ "$existingAsset" == "$apkFileName" ] && \
                 assetId=$(echo "$existingRelease" | jq -r '.assets[] | select(.name == "'"$apkFileName"'") | .id') && \
                 gh_req --method=DELETE "$apiReleases/assets/$assetId"
         done
     else
+        # Make tag name
         create_body_release 
         newRelease=$(gh_req --post-data="$releaseData" --header="Content-Type: application/json" "$apiReleases")
         releaseId=$(echo "$newRelease" | jq -r ".id")
         uploadUrlApk="$uploadRelease/$releaseId/assets?name=$apkFileName"
     fi
 
+    # Upload file to Release 
     gh_req &>/dev/null --header="Content-Type: application/zip" --post-file="$apkFilePath" "$uploadUrlApk"
 }
