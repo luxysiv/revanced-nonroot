@@ -40,7 +40,7 @@ get_apkmirror_version() {
 apkmirror() {
     org="$1" name="$2" package="$3" arch="$4" 
     local regexp='.*APK\(.*\)'$arch'\(.*\)nodpi<\/div>[^@]*@\([^<]*\)'
-    version=$(get_supported_version "$package")
+    version="${version:-$(get_supported_version "$package")}"
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version)}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
@@ -53,7 +53,7 @@ apkmirror() {
 # X not work (maybe more)
 uptodown() {
     name=$1 package=$2
-    version=$(get_supported_version "$package")
+    version="${version:-$(get_supported_version "$package")}"
     url="https://$name.en.uptodown.com/android/versions"
     version="${version:-$(req - 2>/dev/null $url | sed -n 's/.*class="version">\([^<]*\)<.*/\1/p' | get_latest_version)}"
     url=$(req - $url | tr '\n' ' ' \
@@ -66,7 +66,7 @@ uptodown() {
 # Tiktok not work because not available version supported 
 apkpure() {
     name=$1 package=$2
-    version=$(get_supported_version "$package")
+    version="${version:-$(get_supported_version "$package")}"
     url="https://apkpure.net/$name/$package/versions"
     version="${version:-$(req - $url | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
