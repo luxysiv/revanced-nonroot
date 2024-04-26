@@ -19,7 +19,8 @@ get_latest_version() {
 }
 
 get_supported_version() {
-    jq -r --arg pkg_name "$1" '.. | objects | select(.name == "\($pkg_name)" and .versions != null) | .versions[-1]' patches.json | uniq
+    pkg_name="$1"
+    jq -r '.. | objects | select(.name == "'$pkg_name'" and .versions != null) | .versions[-1]' patches.json | uniq
 }
 
 download_resources() {
