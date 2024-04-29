@@ -3,12 +3,12 @@
 
 # Make requests to Github API
 gh_req() {
-    wget --keep-session-cookies -d -qO- --header="Authorization: token $GITHUB_TOKEN" "$@"
+    wget --keep-session-cookies -qO- --header="Authorization: token $GITHUB_TOKEN" "$@"
 }
 
 # Make fake requests with User-Agent and Authorization 
 req() {
-    wget --keep-session-cookies -nv -O "$@" -d --wait=5 \
+    wget --keep-session-cookies -nv -O "$@" --timeout=10 \
     --header="User-Agent: Mozilla/5.0 (Linux; Android 10; K) \
                           AppleWebKit/537.36 (KHTML, like Gecko) \
                           Chrome/126.0.0.0 Mobile Safari/537.36 EdgA/126.0.0.0" \
