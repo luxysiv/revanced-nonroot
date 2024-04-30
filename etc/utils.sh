@@ -13,7 +13,8 @@ req() {
                           AppleWebKit/537.36 (KHTML, like Gecko) \
                           Chrome/126.0.0.0 Mobile Safari/537.36 EdgA/126.0.0.0" \
     --header="Authorization: Basic YXBpLWFwa3VwZGF0ZXI6cm01cmNmcnVVakt5MDRzTXB5TVBKWFc4" \
-    --header="Content-Type: application/json"
+    --header="Content-Type: application/octet-stream" \
+    --header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
 }
 
 # Get highest version (Just compatible with my way of getting versions code)
