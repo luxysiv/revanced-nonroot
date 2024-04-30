@@ -1,21 +1,16 @@
 #!/bin/bash
 # Script make by Mạnh Dương
 
-# Make requests to Github API
-gh_req() {
-    wget --keep-session-cookies -qO- --header="Authorization: token $GITHUB_TOKEN" "$@"
-}
-
-# Make fake requests with User-Agent and Authorization 
+# Make requests with some information 
 req() {
     wget --keep-session-cookies -nv -O "$@" --timeout=10 \
-    --header="User-Agent: Mozilla/5.0 (Linux; Android 10; K) \
+         --header="User-Agent: Mozilla/5.0 (Linux; Android 10; K) \
                           AppleWebKit/537.36 (KHTML, like Gecko) \
                           Chrome/126.0.0.0 Mobile Safari/537.36 EdgA/126.0.0.0" \
-    --header="Connection: keep-alive" \
-    --header="Accept-Language: en-US,en;q=0.9" \
-    --header="Content-Type: application/octet-stream" \
-    --header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
+         --header="Connection: keep-alive" \
+         --header="Accept-Language: en-US,en;q=0.9" \
+         --header="Content-Type: application/octet-stream" \
+         --header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
 }
 
 # Get highest version (Just compatible with my way of getting versions code)
@@ -167,7 +162,7 @@ create_github_release() {
         exit
     fi
 
-    existingRelease=$(gh_req "$apiReleases/tags/$tagName")
+    existingRelease=$(req - --header="Authorization: token $GITHUB_TOKEN" "$apiReleases/tags/$tagName" 2>/dev/null)
 
     # Add more assets release with same tag name
     if [ -n "$existingRelease" ]; then
@@ -178,16 +173,16 @@ create_github_release() {
         for existingAsset in $(echo "$existingRelease" | jq -r '.assets[].name'); do
             [ "$existingAsset" == "$apkFileName" ] && \
                 assetId=$(echo "$existingRelease" | jq -r '.assets[] | select(.name == "'"$apkFileName"'") | .id') && \
-                gh_req --method=DELETE "$apiReleases/assets/$assetId"
+                req - --header="Authorization: token $GITHUB_TOKEN" --method=DELETE "$apiReleases/assets/$assetId" 2>/dev/null
         done
     else
         # Make tag name
         create_body_release 
-        newRelease=$(gh_req --post-data="$releaseData" --header="Content-Type: application/json" "$apiReleases")
+        newRelease=$(req - --header="Authorization: token $GITHUB_TOKEN" --post-data="$releaseData" "$apiReleases")
         releaseId=$(echo "$newRelease" | jq -r ".id")
         uploadUrlApk="$uploadRelease/$releaseId/assets?name=$apkFileName"
     fi
 
     # Upload file to Release 
-    gh_req &>/dev/null --header="Content-Type: application/zip" --post-file="$apkFilePath" "$uploadUrlApk"
+    req - &>/dev/null --header="Authorization: token $GITHUB_TOKEN" --post-file="$apkFilePath" "$uploadUrlApk"
 }
