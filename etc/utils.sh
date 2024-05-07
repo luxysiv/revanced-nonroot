@@ -44,7 +44,7 @@ get_apkmirror_version() {
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {
     org="$1" name="$2" package="$3" arch="$4" 
-    version=$(req - 2>/dev/null $api | get_supported_version "$package")
+    version="${version:-$(get_supported_version "$package")}"
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
     version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
@@ -58,7 +58,7 @@ apkmirror() {
 # X not work (maybe more)
 uptodown() {
     name=$1 package=$2
-    version=$(req - 2>/dev/null $api | get_supported_version "$package")
+    version="${version:-$(get_supported_version "$package")}"
     url="https://$name.en.uptodown.com/android/versions"
     version="${version:-$(req - 2>/dev/null $url | grep -oP 'class="version">\K[^<]+' | get_latest_version)}"
     url=$(req - $url | grep -B3 '"version">'$version'<' \
@@ -71,7 +71,7 @@ uptodown() {
 apkpure() {
     name=$1 package=$2
     url="https://apkpure.net/$name/$package/versions"
-    version=$(req - 2>/dev/null $api | get_supported_version "$package")
+    version="${version:-$(get_supported_version "$package")}"
     version="${version:-$(req - $url | grep -oP 'data-dt-version="\K[^"]*' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
     url=$(req - $url | perl -ne 'print "$1\n" if /.*href="([^"]*\/APK\/'$package'[^"]*)".*/ && ++$i == 1;')
