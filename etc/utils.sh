@@ -10,7 +10,7 @@ req() {
          --header="Upgrade-Insecure-Requests: 1" \
          --header="Cache-Control: max-age=0" \
          --header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8" \
-         --keep-session-cookies --timeout=10 -nv -O "$@"
+         --keep-session-cookies --timeout=30 -nv -O "$@"
 }
 
 # Get highest version (Just compatible with my way of getting versions code)
@@ -44,38 +44,37 @@ get_apkmirror_version() {
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {
     org="$1" name="$2" package="$3" arch="$4" 
-    local regexp='.*APK\(.*\)'$arch'\(.*\)nodpi<\/div>[^@]*@\([^<]*\)'
-    version="${version:-$(get_supported_version "$package")}"
+    version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
-    version="${version:-$(req - $url | get_apkmirror_version | get_latest_version)}"
+    version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's#.*href="\(.*apk/[^"]*\)">'$regexp'.*#\1#p')"
-    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's#.*href="\(.*key=[^"]*\)">.*#\1#p')"
-    url="https://www.apkmirror.com$(req - $url | tr '\n' ' ' | sed -n 's#.*href="\(.*key=[^"]*\)">.*#\1#g;s#amp;##g;p')"
+    url="https://www.apkmirror.com$(req - $url | grep '>nodpi<' -B15 | grep '>'$arch'<' -B13 | grep '>APK<' -B5 \
+                                               | perl -ne 'print "$1\n" if /.*href="([^"]*download\/)".*/ && ++$i == 1;')"
+    url="https://www.apkmirror.com$(req - $url | perl -ne 'print "$1\n" if /.*href="([^"]*key=[^"]*)".*/')"
+    url="https://www.apkmirror.com$(req - $url | perl -ne 's/amp;//g; print "$1\n" if /.*href="([^"]*key=[^"]*)".*/')"
     req $name-v$version.apk $url
 }
 
 # X not work (maybe more)
 uptodown() {
     name=$1 package=$2
-    version="${version:-$(get_supported_version "$package")}"
+    version=$(req - 2>/dev/null $api | get_supported_version "$package")
     url="https://$name.en.uptodown.com/android/versions"
-    version="${version:-$(req - 2>/dev/null $url | sed -n 's/.*class="version">\([^<]*\)<.*/\1/p' | get_latest_version)}"
-    url=$(req - $url | tr '\n' ' ' \
-                     | sed -n 's/.*data-url="\([^"]*\)".*'$version'<\/span>[^@]*@\([^<]*\).*/\1/p' \
-                     | sed 's#/download/#/post-download/#g')
-    url="https://dw.uptodown.com/dwn/$(req - $url | sed -n 's/.*class="post-download".*data-url="\([^"]*\)".*/\1/p')"
+    version="${version:-$(req - 2>/dev/null $url | grep -oP 'class="version">\K[^<]+' | get_latest_version)}"
+    url=$(req - $url | grep -B3 '"version">'$version'<' \
+                     | perl -ne 's/\/download\//\/post-download\//g ; print "$1\n" if /.*data-url="([^"]*)".*/ && ++$i == 1;')
+    url="https://dw.uptodown.com/dwn/$(req - $url | perl -ne ' print "$1\n" if /.*"post-download" data-url="([^"]*)".*/')"
     req $name-v$version.apk $url
 }
 
 # Tiktok not work because not available version supported 
 apkpure() {
     name=$1 package=$2
-    version="${version:-$(get_supported_version "$package")}"
     url="https://apkpure.net/$name/$package/versions"
-    version="${version:-$(req - $url | sed -n 's/.*data-dt-version="\([^"]*\)".*/\1/p' | sed 10q | get_latest_version)}"
+    version=$(req - 2>/dev/null $api | get_supported_version "$package")
+    version="${version:-$(req - $url | grep -oP 'data-dt-version="\K[^"]*' | sed 10q | get_latest_version)}"
     url="https://apkpure.net/$name/$package/download/$version"
-    url=$(req - $url | sed -n 's/.*href="\(.*\/APK\/'$package'[^"]*\).*/\1/p' | uniq)
+    url=$(req - $url | perl -ne 'print "$1\n" if /.*href="([^"]*\/APK\/'$package'[^"]*)".*/ && ++$i == 1;')
     req $name-v$version.apk $url
 }
 
