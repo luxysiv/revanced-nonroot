@@ -13,9 +13,17 @@ req() {
          --keep-session-cookies --timeout=30 -nv -O "$@"
 }
 
-# Get highest version (Just compatible with my way of getting versions code)
-get_latest_version() {
-    grep -Evi 'alpha|beta' | grep -oPi '\b\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?\b' | sort -ur | perl -ne 'print if $. == 1'
+# Get largest version (Just compatible with my way of getting versions code)
+largest_version() {
+    perl -ne '
+        my $max_version;
+        while(/\b(\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?)\b/gi) {
+            $max_version = $1 if not defined $max_version or version->parse($1) > version->parse($max_version);
+        }
+        END {
+            print "$max_version\n";
+        }
+    '
 }
 
 # Read highest supported versions from Revanced 
@@ -36,9 +44,12 @@ download_resources() {
     done
 }
 
-# Get 20 versions of application on APKmirror pages 
-get_apkmirror_version() {
-    perl -ne 'print if /fontBlack/' | perl -lne 'print $1 if />(.*?)<\/a>/ && $. <= 20'
+# Get some versions of application on APKmirror pages 
+get_apkmirror_versions() {
+    perl -lne 'if (/fontBlack(.*?)>(.*?)<\/a>/) { 
+        $count++; 
+        print $2 if $count <= 20 && $_ !~ /alpha|beta/i 
+    }'
 }
 
 # Best but sometimes not work because APKmirror protection 
@@ -46,7 +57,7 @@ apkmirror() {
     org="$1" name="$2" package="$3" arch="$4" dpi="${5:-nodpi}"
     version="${version:-$(get_supported_version "$package")}"
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
-    version="${version:-$(req - $url | get_apkmirror_version | get_latest_version )}"
+    version="${version:-$(req - $url | get_apkmirror_versions | largest_version )}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
     url=$(req - $url | perl -ne 'push @buffer, $_; if (/>\s*'$dpi'\s*</) { print @buffer[-16..-1]; @buffer = (); }' \
                      | perl -ne 'push @buffer, $_; if (/>\s*'$arch'\s*</) { print @buffer[-14..-1]; @buffer = (); }' \
