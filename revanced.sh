@@ -11,8 +11,7 @@ apkmirror "google-inc" \
           "youtube" \
           "com.google.android.youtube"
 apply_patches "youtube"
-sign_patched_apk "youtube"
-create_github_release "youtube"
+github_release "youtube"
 
 # Patch YouTube Music 
 apkmirror "google-inc" \
@@ -20,7 +19,6 @@ apkmirror "google-inc" \
           "com.google.android.apps.youtube.music" \
           "arm64-v8a"
 apply_patches "youtube-music"
-sign_patched_apk "youtube-music"
-create_github_release "youtube-music"
+github_release "youtube-music"
 
 # You can add other apps here 
