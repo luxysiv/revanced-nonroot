@@ -63,6 +63,7 @@ apkpure() {
 apply_patches() {
     name="$1"    
     perl utils/apply_patches.pl "$name" "$version"
+    unset version 
 }
 
 # Make body Release 
