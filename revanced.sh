@@ -1,5 +1,5 @@
 #!/bin/bash
-source ./etc/utils.sh
+source ./utils/utils.sh
 
 # Main script 
 
