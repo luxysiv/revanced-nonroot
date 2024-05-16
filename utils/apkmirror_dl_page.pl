@@ -3,8 +3,8 @@ use strict;
 use warnings;
 
 # Ensure dpi and arch are provided
-my $dpi = shift; # or die "Usage: $0 <dpi> <arch>\n";
-my $arch = shift; #  or die "Usage: $0 <dpi> <arch>\n";
+my $dpi = shift or die "Usage: $0 <dpi> <arch>\n";
+my $arch = shift  or die "Usage: $0 <dpi> <arch>\n";
 
 # Read all input into an array
 my @lines = <STDIN>;
