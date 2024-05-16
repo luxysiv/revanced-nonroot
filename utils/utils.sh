@@ -62,33 +62,7 @@ apkpure() {
 # Apply patches with Include and Exclude Patches
 apply_patches() {
     name="$1"    
-    mapfile -t optionsPatches < <(perl utils/process_patches.pl "$name")
-    
-    # Apply patches using CLI
-    java -jar revanced-cli*.jar patch \
-        --merge revanced-integrations*.apk \
-        --patch-bundle revanced-patches*.jar \
-        "${optionsPatches[@]}" \
-        --out "patched-$name-v$version.apk" \
-        "$name-v$version.apk"
-    rm "$name-v$version.apk"
-    unset optionsPatches
-}
-
-# Sign APK with FOSS keystore(https://github.com/tytydraco/public-keystore)
-sign_patched_apk() {   
-    name="$1"
-    # Sign the patched APK
-    apksigner=$(find $ANDROID_SDK_ROOT/build-tools -name apksigner -type f | sort -r | head -n 1)
-    $apksigner sign --verbose \
-        --ks ./etc/public.jks \
-        --ks-key-alias public \
-        --ks-pass pass:public \
-        --key-pass pass:public \
-        --in "patched-$name-v$version.apk" \
-        --out "$name-revanced-v$version.apk"
-    rm patched-$name-v$version.apk
-    unset version
+    perl utils/apply_patches.pl "$name" "$version"
 }
 
 # Make body Release 
@@ -116,7 +90,7 @@ EOF
 }
 
 # Release Revanced APK
-create_github_release() {
+github_release() {
     name="$1"
     authorization="Authorization: token $GITHUB_TOKEN" 
     apiReleases="https://api.github.com/repos/$GITHUB_REPOSITORY/releases"
