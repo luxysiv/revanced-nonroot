@@ -13,108 +13,66 @@ req() {
          --keep-session-cookies --timeout=30 -nv -O "$@"
 }
 
-# Get largest version (Just compatible with my way of getting versions code)
-largest_version() {
-    perl -ne '
-        my $max_version;
-        while(/\b(\d+(\.\d+)+(?:\-\w+)?(?:\.\d+)?(?:\.\w+)?)\b/gi) {
-            $max_version = $1 if not defined $max_version or version->parse($1) > version->parse($max_version);
-        }
-        END {
-            print "$max_version\n";
-        }
-    '
-}
-
-# Read highest supported versions from Revanced 
-get_supported_version() {
-    pkg_name="$1"
-    jq -r '.. | objects | select(.name == "'$pkg_name'" and .versions != null) | .versions[-1]' patches.json | uniq
-}
-
 # Download necessary resources to patch from Github latest release 
 download_resources() {
     for repo in revanced-patches revanced-cli revanced-integrations; do
         githubApiUrl="https://api.github.com/repos/revanced/$repo/releases/latest"
-        page=$(req - 2>/dev/null $githubApiUrl)
-        assetUrls=$(echo $page | jq -r '.assets[] | select(.name | endswith(".asc") | not) | "\(.browser_download_url) \(.name)"')
+        assetUrls=$(req - 2>/dev/null $githubApiUrl | perl utils/extract_github.pl)
         while read -r downloadUrl assetName; do
             req "$assetName" "$downloadUrl" 
         done <<< "$assetUrls"
     done
 }
 
-# Get some versions of application on APKmirror pages 
-get_apkmirror_versions() {
-    perl -lne 'if (/fontBlack(.*?)>(.*?)<\/a>/) { 
-        $count++; 
-        print $2 if $count <= 20 && $_ !~ /alpha|beta/i 
-    }'
-}
-
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {
-    org="$1" name="$2" package="$3" arch="$4" dpi="${5:-nodpi}"
-    version="${version:-$(get_supported_version "$package")}"
+    org="$1" name="$2" package="$3" arch="${4:-universal}" dpi="${5:-nodpi}"
+    version="${version:-$(cat patches.json | perl utils/extract_supported_version.pl "$package")}"
     url="https://www.apkmirror.com/uploads/?appcategory=$name"
-    version="${version:-$(req - $url | get_apkmirror_versions | largest_version )}"
+    version="${version:-$(req - $url | perl utils/apkmirror_versions.pl | perl utils/largest_version.pl)}"
     url="https://www.apkmirror.com/apk/$org/$name/$name-${version//./-}-release"
-    url=$(req - $url | perl -ne 'push @buffer, $_; if (/>\s*'$dpi'\s*</) { print @buffer[-16..-1]; @buffer = (); }' \
-                     | perl -ne 'push @buffer, $_; if (/>\s*'$arch'\s*</) { print @buffer[-14..-1]; @buffer = (); }' \
-                     | perl -ne 'push @buffer, $_; if (/>\s*APK\s*</) { print @buffer[-6..-1]; @buffer = (); }' \
-                     | perl -ne 'print "https://www.apkmirror.com$1\n" if /.*href="(.*apk-[^"]*)".*/ && ++$i == 1;')
-    url=$(req - $url | perl -ne 'print "https://www.apkmirror.com$1\n" if /.*href="(.*key=[^"]*)".*/')
-    url=$(req - $url | perl -ne 's/amp;//g; print "https://www.apkmirror.com$1\n" if /.*href="(.*key=[^"]*)".*/')
+    url=$(req - $url | perl utils/apkmirror_dl_page.pl $dpi $arch)
+    url=$(req - $url | perl utils/apkmirror_dl_link.pl)
+    url=$(req - $url | perl utils/apkmirror_final_link.pl)
     req $name-v$version.apk $url
 }
 
 # X not work (maybe more)
-uptodown() {
+uptodown() {  
     name=$1 package=$2
-    version="${version:-$(get_supported_version "$package")}"
+    version="${version:-$(cat patches.json | perl utils/extract_supported_version.pl "$package")}"
     url="https://$name.en.uptodown.com/android/versions"
-    version="${version:-$(req - 2>/dev/null $url | perl -lne 'print $1 if /class="version">(.*?)<\/div>/')}"
-    url=$(req - $url | perl -ne 'push @buffer, $_; if (/>\s*'$version'\s*</) { print @buffer[-4..-1]; @buffer = (); }' \
-                     | perl -ne 's/\/download\//\/post-download\//g ; print "$1\n" if /.*data-url="([^"]*)".*/ && ++$i == 1;')
-    url=$(req - $url | perl -ne ' print "https://dw.uptodown.com/dwn/$1\n" if /.*"post-download" data-url="([^"]*)".*/')
+    version="${version:-$(req - 2>/dev/null $url | perl utils/uptodown_latest_version.pl)}"
+    url=$(req - $url | perl utils/uptodown_dl_page.pl $version)
+    url=$(req - $url | perl utils/uptodown_final_link.pl)
     req $name-v$version.apk $url
 }
 
 # Tiktok not work because not available version supported 
-apkpure() {
+apkpure() {   
     name=$1 package=$2
     url="https://apkpure.net/$name/$package/versions"
-    version="${version:-$(get_supported_version "$package")}"
-    version="${version:-$(req - $url | perl -lne 'print $1 if /data-dt-version="(.*?)"/ && ++$i == 1;')}"
+    version="${version:-$(cat patches.json | perl utils/extract_supported_version.pl "$package")}"
+    version="${version:-$(req - $url | perl utils/apkpure_latest_version.pl)}"
     url="https://apkpure.net/$name/$package/download/$version"
-    url=$(req - $url | perl -ne 'print "$1\n" if /.*href="(.*\/APK\/'$package'[^"]*)".*/ && ++$i == 1;')
+    url=$(req - $url | perl utils/apkpure_dl_link.pl $package)
     req $name-v$version.apk $url
 }
 
 # Apply patches with Include and Exclude Patches
-apply_patches() {   
-    name="$1"
-    # Read patches from file
-    mapfile -t lines < ./etc/$name-patches.txt
-
-    # Process patches
-    for line in "${lines[@]}"; do
-        if [[ -n "$line" && ( ${line:0:1} == "+" || ${line:0:1} == "-" ) ]]; then
-            patch_name=$(sed -e 's/^[+|-] *//;s/ *$//' <<< "$line") 
-            [[ ${line:0:1} == "+" ]] && includePatches+=("--include" "$patch_name")
-            [[ ${line:0:1} == "-" ]] && excludePatches+=("--exclude" "$patch_name")
-        fi
-    done
+apply_patches() {
+    name="$1"    
+    mapfile -t optionsPatches < <(perl utils/process_patches.pl "$name")
     
-    # Apply patches using Revanced tools
+    # Apply patches using CLI
     java -jar revanced-cli*.jar patch \
         --merge revanced-integrations*.apk \
         --patch-bundle revanced-patches*.jar \
-        "${excludePatches[@]}" "${includePatches[@]}" \
+        "${optionsPatches[@]}" \
         --out "patched-$name-v$version.apk" \
         "$name-v$version.apk"
-    rm $name-v$version.apk
-    unset excludePatches includePatches
+    rm "$name-v$version.apk"
+    unset optionsPatches
 }
 
 # Sign APK with FOSS keystore(https://github.com/tytydraco/public-keystore)
@@ -144,7 +102,7 @@ create_body_release() {
 - **ReVanced CLI:** v$cliver
 
 ## Note:
-**ReVancedGms** is **necessary** to work. 
+**ReVanced GmsCore** is **necessary** to work. 
 - Please **download** it from [HERE](https://github.com/revanced/gmscore/releases/latest).
 EOF
 )
@@ -165,9 +123,9 @@ create_github_release() {
     uploadRelease="https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases"
     apkFilePath=$(find . -type f -name "$name-revanced*.apk")
     apkFileName=$(basename "$apkFilePath")
-    patchver=$(ls -1 revanced-patches*.jar | grep -oP '\d+(\.\d+)+')
-    integrationsver=$(ls -1 revanced-integrations*.apk | grep -oP '\d+(\.\d+)+')
-    cliver=$(ls -1 revanced-cli*.jar | grep -oP '\d+(\.\d+)+')
+    patchver=$(perl utils/extract_version.pl "revanced-patches*.jar")
+    integrationsver=$(perl utils/extract_version.pl "revanced-integrations*.apk")
+    cliver=$(perl utils/extract_version.pl "revanced-cli*.jar")
     tagName="v$patchver"
 
     # Make sure release with APK
