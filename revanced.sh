@@ -4,7 +4,7 @@ source ./utils/utils.sh
 # Main script 
 
 # Perform download_repository_assets
-download_resources
+perl utils/github_downloader.pl
 
 # Patch YouTube 
 apkmirror "google-inc" \
