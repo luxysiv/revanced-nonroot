@@ -17,10 +17,10 @@ my ($patches_jar) = bsd_glob("revanced-patches*.jar");
 
 # Construct the command
 my $cmd = "java -jar $cli_jar patch "
-        . "-m $integrations_apk "
-        . "-b $patches_jar "
+        . "--merge $integrations_apk "
+        . "--patch-bundle $patches_jar "
+        . "--out patched-$name-v$version.apk "
         . "@optionsPatches "
-        . "-o patched-$name-v$version.apk "
         . "$name-v$version.apk";
 
 # Execute the command

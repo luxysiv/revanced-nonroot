@@ -52,8 +52,8 @@ my @excludePatches = @{$exclude_ref};
 
 # Print the patches to be included and excluded
 foreach my $patch (@includePatches) {
-    print "-i \"$patch\"\n";
+    print "--include \"$patch\"\n";
 }
 foreach my $patch (@excludePatches) {
-    print "-e \"$patch\"\n";
+    print "--exclude \"$patch\"\n";
 }
