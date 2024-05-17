@@ -13,17 +13,6 @@ req() {
          --keep-session-cookies --timeout=30 -nv -O "$@"
 }
 
-# Download necessary resources to patch from Github latest release 
-download_resources() {
-    for repo in revanced-patches revanced-cli revanced-integrations; do
-        githubApiUrl="https://api.github.com/repos/revanced/$repo/releases/latest"
-        assetUrls=$(req - 2>/dev/null $githubApiUrl | perl utils/extract_github.pl)
-        while read -r downloadUrl assetName; do
-            req "$assetName" "$downloadUrl" 
-        done <<< "$assetUrls"
-    done
-}
-
 # Best but sometimes not work because APKmirror protection 
 apkmirror() {
     org="$1" name="$2" package="$3" arch="${4:-universal}" dpi="${5:-nodpi}"
