@@ -8,6 +8,7 @@ jobs:
     permissions: write-all
     runs-on: ubuntu-latest
     env:
+      PERL5LIB: ./utils
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     steps:
@@ -15,7 +16,7 @@ jobs:
       uses: actions/checkout@main  
 
     - name: Patch Revanced
-      run: bash revanced.sh
+      run: perl revanced.pl
              
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@v2
