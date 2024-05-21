@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 use FindBin; 
+use Env;
 
 use lib "$FindBin::Bin/utils";
 use apkpure qw(apkpure);
@@ -13,6 +14,8 @@ use github_downloader qw(download_resources);
 
 
 # Main
+# Could set specific version to patch. Example:
+# $ENV{VERSION} = "6.51.52";
 
 # Download Github releases assets 
 download_resources();
