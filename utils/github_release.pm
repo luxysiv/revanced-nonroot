@@ -11,19 +11,26 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(github_release);
 
-# Function to make requests
+# Function to make HTTP requests
 sub req {
-    my ($url, $method, $data) = @_;
+    my ($url, $method, $data, $is_file) = @_;
     my $token = $ENV{'GITHUB_TOKEN'};
-    
+
     my $cmd = "curl -s -H 'Authorization: token $token' -H 'Content-Type: application/json'";
     $cmd .= " -X $method" if $method;
-    $cmd .= " --data '\@$data'" if $method eq 'POST' && defined $data;
+    if ($method eq 'POST' && defined $data) {
+        if ($is_file) {
+            $cmd .= " --data-binary \@$data";
+        } else {
+            $cmd .= " --data '\@$data'";
+        }
+    }
     $cmd .= " $url";
 
     my $response = `$cmd`;
     return $response;
 }
+
 
 # Function to create the body of the release
 sub create_body_release {
