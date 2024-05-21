@@ -5,13 +5,13 @@ use strict;
 use warnings;
 use JSON;
 use Env;
-use File::Temp qw(tempfile);
 use Exporter 'import';
 
 our @EXPORT_OK = qw(apkmirror);
 
 sub req {
     my ($url, $output) = @_;
+    $output ||= '-';
     my $headers = join(' ',
         '--header="User-Agent: Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0"',
         '--header="Content-Type: application/octet-stream"',
@@ -22,9 +22,9 @@ sub req {
         '--header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"'
     );
 
-    my $command = "wget $headers --keep-session-cookies --timeout=30 -nv -O \"$output\" \"$url\"";
-    system($command) == 0
-        or die "Failed to execute $command: $?";
+    my $command = "wget $headers --keep-session-cookies --timeout=30 -nv -O $output \"$url\"";
+    my $content = `$command`;
+    return $content;
 }
 
 sub filter_lines {
@@ -76,18 +76,15 @@ sub apkmirror {
     $dpi ||= 'nodpi';
     $arch ||= 'universal';
 
-    my ($fh, $tempfile) = tempfile();
     my $version;
 
     if (my $supported_version = get_supported_version($package)) {
         $version = $supported_version;
     } else {
         my $page = "https://www.apkmirror.com/uploads/?appcategory=$name";
-        req($page, $tempfile);
+        my $page_content = req($page);
 
-        open my $file_handle, '<', $tempfile or die "Could not open file '$tempfile': $!";
-        my @lines = <$file_handle>;
-        close $file_handle;
+        my @lines = split /\n/, $page_content;
 
         my $count = 0;
         my @versions;
@@ -102,18 +99,15 @@ sub apkmirror {
         @versions = map { s/^\D+//; $_ } @versions;
         @versions = sort { version->parse($b) <=> version->parse($a) } @versions;
         $version = $versions[0];
-        unlink $tempfile;
     }
 
     # Export version to environment
     $ENV{VERSION} = $version;
 
     my $url = "https://www.apkmirror.com/apk/$org/$name/$name-" . (join '-', split /\./, $version) . "-release";
-    req($url, $tempfile);
+    my $apk_page_content = req($url);
 
-    open $fh, '<', $tempfile or die "Could not open file '$tempfile': $!";
-    my @lines = <$fh>;
-    close $fh;
+    my @lines = split /\n/, $apk_page_content;
 
     filter_lines(qr/>\s*$dpi\s*</, 16, \@lines);
     filter_lines(qr/>\s*$arch\s*</, 14, \@lines);
@@ -126,13 +120,10 @@ sub apkmirror {
             last;
         }
     }
-    unlink $tempfile;
     
-    req($download_page_url, $tempfile);
+    my $download_page_content = req($download_page_url);
 
-    open $fh, '<', $tempfile or die "Could not open file '$tempfile': $!";
-    @lines = <$fh>;
-    close $fh;
+    @lines = split /\n/, $download_page_content;
 
     my $dl_apk_url;
     for my $line (@lines) {
@@ -141,24 +132,15 @@ sub apkmirror {
             last;
         }
     }
-    unlink $tempfile;  
     
-    req($dl_apk_url, $tempfile);
-    
-    open $fh, '<', $tempfile or die "Could not open file '$tempfile': $!";
-    @lines = <$fh>;
-    close $fh;
-    
+    my $apk_content = req($dl_apk_url);
+
     my $final_url;
-    for my $line (@lines) {
-        if ($line =~ /href="(.*key=[^"]*)"/) {
-            $final_url = "https://www.apkmirror.com$1";
-            $final_url =~ s/amp;//g;
-            last;
-        }
+    if ($apk_content =~ /href="(.*key=[^"]*)"/) {
+        $final_url = "https://www.apkmirror.com$1";
+        $final_url =~ s/amp;//g;
     }
-    unlink $tempfile;   
-    
+
     my $apk_filename = "$name-v$version.apk";
     req($final_url, $apk_filename);
 }

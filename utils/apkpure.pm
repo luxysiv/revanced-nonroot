@@ -5,14 +5,13 @@ use strict;
 use warnings;
 use JSON;
 use Env;
-use File::Temp qw(tempfile);
 use Exporter 'import';
 
 our @EXPORT_OK = qw(apkpure);
 
-
 sub req {
     my ($url, $output) = @_;
+    $output ||= '-';
     my $headers = join(' ',
         '--header="User-Agent: Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0"',
         '--header="Content-Type: application/octet-stream"',
@@ -23,9 +22,10 @@ sub req {
         '--header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"'
     );
 
-    my $command = "wget $headers --keep-session-cookies --timeout=30 -nv -O \"$output\" \"$url\"";
-    system($command) == 0
-        or die "Failed to execute $command: $?";
+    my $command = "wget $headers --keep-session-cookies --timeout=30 -nv -O $output \"$url\"";
+    my $content = `$command`;
+    die "Failed to execute $command: $?" if $? != 0;
+    return $content;
 }
 
 sub get_supported_version {
@@ -43,7 +43,7 @@ sub get_supported_version {
     foreach my $patch (@{$data}) {
         my $compatible_packages = $patch->{'compatiblePackages'};
     
-            if ($compatible_packages && ref($compatible_packages) eq 'ARRAY') {
+        if ($compatible_packages && ref($compatible_packages) eq 'ARRAY') {
             foreach my $package (@$compatible_packages) {
                 if (
                     $package->{'name'} eq $pkg_name &&
@@ -63,37 +63,30 @@ sub get_supported_version {
 sub apkpure {
     my ($name, $package) = @_;
 
-    my ($fh, $tempfile) = tempfile();
     my $version;
 
     if (my $supported_version = get_supported_version($package)) {
         $version = $supported_version;
     } else {
         my $page = "https://apkpure.net/$name/$package/versions";
-        req($page, $tempfile);
+        my $page_content = req($page);
 
-        open my $file_handle, '<', $tempfile or die "Could not open file '$tempfile': $!";
-        my @lines = <$file_handle>;
-        close $file_handle;
+        my @lines = split /\n/, $page_content;
 
-        my @version;
         for my $line (@lines) {
             if ($line =~ /"ver-top-down"(.*?)data-dt-version="(.*?)"/) {
                 $version = "$2";
             }
         }
-        unlink $tempfile;
     }
 
     # Export version to environment
     $ENV{VERSION} = $version;
 
     my $url = "https://apkpure.net/$name/$package/download/$version";
-    req($url, $tempfile);
+    my $download_page_content = req($url);
 
-    open $fh, '<', $tempfile or die "Could not open file '$tempfile': $!";
-    my @lines = <$fh>;
-    close $fh;
+    my @lines = split /\n/, $download_page_content;
     
     my $download_url;
     for my $line (@lines) {
@@ -102,7 +95,6 @@ sub apkpure {
             last;
         }
     }
-    unlink $tempfile;   
     
     my $apk_filename = "$name-v$version.apk";
     req($download_url, $apk_filename);
