@@ -8,7 +8,6 @@ jobs:
     permissions: write-all
     runs-on: ubuntu-latest
     env:
-      PERL5LIB: ./utils
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     steps:
