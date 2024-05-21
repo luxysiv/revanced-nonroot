@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use lib;
+use FindBin; 
 
+use lib "$FindBin::Bin/utils";
 use apkpure qw(apkpure);
 use uptodown qw(uptodown);
 use apkmirror qw(apkmirror);
