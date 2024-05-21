@@ -6,6 +6,7 @@ use warnings;
 use File::Glob ':glob';
 use File::Find;
 use Cwd;
+use Env;
 use File::Spec;
 use Exporter 'import';
 
@@ -136,6 +137,9 @@ sub apply_patches {
 
     # Remove the patched APK file
     unlink $input_apk or warn "Could not unlink $input_apk: $!";
+
+    # Remove environment version
+    undef $ENV{VERSION};
 }
 
 1;
