@@ -130,7 +130,7 @@ sub github_release {
     }
 
     # Upload the APK file
-    my $upload_response = req($upload_url_apk, 'POST', $apk_file_path);
+    my $upload_response = req($upload_url_apk, 'POST', $apk_file_path, 1);
 }
 
 1;
