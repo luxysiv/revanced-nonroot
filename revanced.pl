@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use lib;
 
 use apkpure qw(apkpure);
 use uptodown qw(uptodown);
