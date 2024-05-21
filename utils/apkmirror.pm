@@ -142,6 +142,9 @@ sub apkmirror {
         if ($line =~ /href="(.*key=[^"]*)"/) {
             $final_url = "https://www.apkmirror.com$1";
             $final_url =~ s/amp;//g;
+            unless ($final_url =~ /&forcebaseapk$/) {
+                $final_url .= '&forcebaseapk';
+            }
             last;
         }
     }
