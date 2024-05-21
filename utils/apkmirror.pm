@@ -132,13 +132,18 @@ sub apkmirror {
             last;
         }
     }
-    
-    my $apk_content = req($dl_apk_url);
+
+    my $dl_apk_content = req($dl_apk_url);
+
+    @lines = split /\n/, $dl_apk_content;
 
     my $final_url;
-    if ($apk_content =~ /href="(.*key=[^"]*)"/) {
-        $final_url = "https://www.apkmirror.com$1";
-        $final_url =~ s/amp;//g;
+    for my $line (@lines) {
+        if ($line =~ /href="(.*key=[^"]*)"/) {
+            $final_url = "https://www.apkmirror.com$1";
+            $final_url =~ s/amp;//g;
+            last;
+        }
     }
 
     my $apk_filename = "$name-v$version.apk";
