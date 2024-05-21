@@ -63,25 +63,26 @@ sub get_supported_version {
 sub apkpure {
     my ($name, $package) = @_;
 
-    my $version;
+    my $version = $ENV{VERSION};
 
-    if (my $supported_version = get_supported_version($package)) {
-        $version = $supported_version;
-    } else {
-        my $page = "https://apkpure.net/$name/$package/versions";
-        my $page_content = req($page);
+    if (!$version) {
+        if (my $supported_version = get_supported_version($package)) {
+            $version = $supported_version;
+            $ENV{VERSION} = $version;
+        } else {
+            my $page = "https://apkpure.net/$name/$package/versions";
+            my $page_content = req($page);
 
-        my @lines = split /\n/, $page_content;
+            my @lines = split /\n/, $page_content;
 
-        for my $line (@lines) {
-            if ($line =~ /"ver-top-down"(.*?)data-dt-version="(.*?)"/) {
-                $version = "$2";
+            for my $line (@lines) {
+                if ($line =~ /"ver-top-down"(.*?)data-dt-version="(.*?)"/) {
+                    $version = "$2";
+                }
+            $ENV{VERSION} = $version;
             }
         }
     }
-
-    # Export version to environment
-    $ENV{VERSION} = $version;
 
     my $url = "https://apkpure.net/$name/$package/download/$version";
     my $download_page_content = req($url);

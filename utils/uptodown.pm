@@ -75,26 +75,27 @@ sub get_supported_version {
 sub uptodown {
     my ($name, $package) = @_;
 
-    my $version;
+    my $version = $ENV{VERSION};
 
-    if (my $supported_version = get_supported_version($package)) {
-        $version = $supported_version;
-    } else {
-        my $page = "https://$name.en.uptodown.com/android/versions";
-        my $page_content = req($page);
+    if (!$version) {
+        if (my $supported_version = get_supported_version($package)) {
+            $version = $supported_version;
+            $ENV{VERSION} = $version;
+        } else {
+            my $page = "https://$name.en.uptodown.com/android/versions";
+            my $page_content = req($page);
 
-        my @lines = split /\n/, $page_content;
+            my @lines = split /\n/, $page_content;
 
-        for my $line (@lines) {
-            if ($line =~ /.*class="version">(.*?)<\/div>/) {
-                $version = "$1";
-                last;
+            for my $line (@lines) {
+                if ($line =~ /.*class="version">(.*?)<\/div>/) {
+                    $version = "$1";
+                    last;
+                }
             }
+            $ENV{VERSION} = $version;
         }
     }
-
-    # Export version to environment
-    $ENV{VERSION} = $version;
 
     my $url = "https://$name.en.uptodown.com/android/versions";
     my $download_page_content = req($url);

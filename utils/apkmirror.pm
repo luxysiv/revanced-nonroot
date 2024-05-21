@@ -76,33 +76,34 @@ sub apkmirror {
     $dpi ||= 'nodpi';
     $arch ||= 'universal';
 
-    my $version;
+    my $version = $ENV{VERSION};
 
-    if (my $supported_version = get_supported_version($package)) {
-        $version = $supported_version;
-    } else {
-        my $page = "https://www.apkmirror.com/uploads/?appcategory=$name";
-        my $page_content = req($page);
+    if (!$version) {
+        if (my $supported_version = get_supported_version($package)) {
+            $version = $supported_version;
+            $ENV{VERSION} = $version;
+        } else {
+            my $page = "https://www.apkmirror.com/uploads/?appcategory=$name";
+            my $page_content = req($page);
 
-        my @lines = split /\n/, $page_content;
+            my @lines = split /\n/, $page_content;
 
-        my $count = 0;
-        my @versions;
-        for my $line (@lines) {
-            if ($line =~ /fontBlack(.*?)>(.*?)<\/a>/) {
-                my $version = $2;
-                push @versions, $version if $count <= 20 && $line !~ /alpha|beta/i;
-                $count++;
+            my $count = 0;
+            my @versions;
+            for my $line (@lines) {
+                if ($line =~ /fontBlack(.*?)>(.*?)<\/a>/) {
+                    my $version = $2;
+                    push @versions, $version if $count <= 20 && $line !~ /alpha|beta/i;
+                    $count++;
+                }
             }
+
+            @versions = map { s/^\D+//; $_ } @versions;
+            @versions = sort { version->parse($b) <=> version->parse($a) } @versions;
+            $version = $versions[0];
+            $ENV{VERSION} = $version;
         }
-
-        @versions = map { s/^\D+//; $_ } @versions;
-        @versions = sort { version->parse($b) <=> version->parse($a) } @versions;
-        $version = $versions[0];
     }
-
-    # Export version to environment
-    $ENV{VERSION} = $version;
 
     my $url = "https://www.apkmirror.com/apk/$org/$name/$name-" . (join '-', split /\./, $version) . "-release";
     my $apk_page_content = req($url);
