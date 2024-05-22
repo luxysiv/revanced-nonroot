@@ -141,11 +141,14 @@ sub apkmirror {
     my $download_page_url;
     for my $line (@lines) {
         if ($line =~ /.*href="(.*[^"]*\/)"/) {
-            $download_page_url = "https://www.apkmirror.com$1";
+            $download_page_url = $1; 
+            unless ($download_page_url =~ /^https:\/\/www\.apkmirror\.com/) {
+                $download_page_url = "https://www.apkmirror.com$1";
+            }
             last;
         }
     }
-    
+
     my $download_page_content = req($download_page_url);
 
     @lines = split /\n/, $download_page_content;
@@ -153,7 +156,10 @@ sub apkmirror {
     my $dl_apk_url;
     for my $line (@lines) {
         if ($line =~ /href="(.*key=[^"]*)"/) {
-            $dl_apk_url = "https://www.apkmirror.com$1";
+            $dl_apk_url = $1; 
+            unless ($dl_apk_url =~ /^https:\/\/www\.apkmirror\.com/) {
+                $dl_apk_url = "https://www.apkmirror.com$1";
+            }
             last;
         }
     }
@@ -165,7 +171,10 @@ sub apkmirror {
     my $final_url;
     for my $line (@lines) {
         if ($line =~ /href="(.*key=[^"]*)"/) {
-            $final_url = "https://www.apkmirror.com$1";
+            $final_url = $1; 
+            unless ($final_url =~ /^https:\/\/www\.apkmirror\.com/) {
+                $final_url = "https://www.apkmirror.com$1";
+            }
             $final_url =~ s/amp;//g;
             unless ($final_url =~ /&forcebaseapk$/) {
                 $final_url .= '&forcebaseapk';
