@@ -26,8 +26,13 @@ sub process_patches {
     # Get the name of the file containing patches
     my $filename = "./etc/${name}-patches.txt";
 
+    # Check if the file exists and is readable
+    unless (-e $filename && -r $filename) {
+        return ();
+    }
+
     # Read patches from the file
-    open(my $fh, '<', $filename) or die "Cannot open file '$filename': $!";
+    open(my $fh, '<', $filename);
 
     my @lines = <$fh>;
     close $fh;
