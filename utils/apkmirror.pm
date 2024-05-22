@@ -29,28 +29,34 @@ sub req {
 
 sub filter_lines {
     my ($pattern, $buffer_ref) = @_;
-    my @temp_buffer = ();
+    my @result_buffer = ();
     my $last_target_index = -1;
     my $index = 0;
+    my $collecting = 0;
+    my @temp_buffer = ();
 
     for my $line (@$buffer_ref) {
-        push(@temp_buffer, $line);
-        
         if ($line =~ /<a\s+class="accent_color"/) {
-            $last_target_index = $index; 
+            $last_target_index = $index;
+            $collecting = 1;
+            @temp_buffer = ();
         }
-        
+
+        if ($collecting) {
+            push(@temp_buffer, $line);
+        }
+
         if ($line =~ /$pattern/) {
-            if ($last_target_index != -1) {
-                @$buffer_ref = @temp_buffer[$last_target_index..$#temp_buffer];
-            } else {
-                @$buffer_ref = @temp_buffer; 
+            if ($last_target_index != -1 && $collecting) {
+                push @result_buffer, @temp_buffer;
+                $collecting = 0;
             }
-            return;
         }
-        
+
         $index++;
     }
+
+    @$buffer_ref = @result_buffer; 
 }
 
 sub get_supported_version {
