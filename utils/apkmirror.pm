@@ -130,11 +130,11 @@ sub apkmirror {
 
     my @lines = split /\n/, $apk_page_content;
 
-    if (defined $arch) {
-        filter_lines(qr/>\s*$arch\s*</, \@lines);
-    }
     if (defined $dpi) {
         filter_lines(qr/>\s*$dpi\s*</, \@lines);
+    }
+    if (defined $arch) {
+        filter_lines(qr/>\s*$arch\s*</, \@lines);
     }
     filter_lines(qr/>\s*APK\s*</, \@lines);
 
