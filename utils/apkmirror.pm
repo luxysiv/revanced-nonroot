@@ -28,19 +28,34 @@ sub req {
 }
 
 sub filter_lines {
-    my ($pattern, $size, $buffer_ref) = @_;
-    my @temp_buffer;
+    my ($pattern, $buffer_ref) = @_;
+    my @temp_buffer = ();
+    my $last_target_index = -1;
+    my $index = 0;
+
     for my $line (@$buffer_ref) {
-        push @temp_buffer, $line;
+        push(@temp_buffer, $line);
+        
+        if ($line =~ /<a\s+class="accent_color"/) {
+            $last_target_index = $index; 
+        }
+        
         if ($line =~ /$pattern/) {
-            @$buffer_ref = @temp_buffer[-$size..-1] if @temp_buffer > $size;
+            if ($last_target_index != -1) {
+                @$buffer_ref = @temp_buffer[$last_target_index..$#temp_buffer];
+            } else {
+                @$buffer_ref = @temp_buffer; 
+            }
             return;
         }
+        
+        $index++;
     }
 }
 
 sub get_supported_version {
     my $pkg_name = shift;
+    return unless defined $pkg_name;
     my $filename = 'patches.json';
     
     open(my $fh, '<', $filename) or die "Could not open file '$filename' $!";
@@ -74,7 +89,6 @@ sub get_supported_version {
 sub apkmirror {
     my ($org, $name, $package, $arch, $dpi) = @_;
     $dpi ||= 'nodpi';
-    $arch ||= 'universal';
 
     my $version = $ENV{VERSION};
 
@@ -110,9 +124,13 @@ sub apkmirror {
 
     my @lines = split /\n/, $apk_page_content;
 
-    filter_lines(qr/>\s*$dpi\s*</, 16, \@lines);
-    filter_lines(qr/>\s*$arch\s*</, 14, \@lines);
-    filter_lines(qr/>\s*APK\s*</, 6, \@lines);
+    if (defined $arch) {
+        filter_lines(qr/>\s*$arch\s*</, \@lines);
+    }
+    if (defined $dpi) {
+        filter_lines(qr/>\s*$dpi\s*</, \@lines);
+    }
+    filter_lines(qr/>\s*APK\s*</, \@lines);
 
     my $download_page_url;
     for my $line (@lines) {
