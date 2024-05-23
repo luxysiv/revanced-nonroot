@@ -7,6 +7,7 @@
 
 **Note**
   - From now, ReVanced use [Revanced GmsCore](https://github.com/revanced/gmscore) to work.
+  - APK without **x86** and **x86_64** 
 
 **Download page** (Take from latest release) (included [Revanced GmsCore](https://github.com/revanced/gmscore))
   - Eng page: https://revanced-nonroot.pages.dev
