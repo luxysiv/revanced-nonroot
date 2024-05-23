@@ -32,7 +32,7 @@ sub process_patches {
     }
 
     # Read patches from the file
-    open(my $fh, '<', $filename);
+    open(my $fh, '<', $filename) or die "Cannot open file: $filename";
 
     my @lines = <$fh>;
     close $fh;
@@ -96,6 +96,15 @@ sub find_apksigner {
     return $apksigner;
 }
 
+# Subroutine to remove x86 and x86_64 libraries from the APK using the zip command
+sub remove_architecture_libs {
+    my ($apk) = @_;
+    my $zip_cmd = "zip --delete $apk 'lib/x86/*' 'lib/x86_64/*' > /dev/null 2>&1";
+    system($zip_cmd);
+
+    unless ($? == 0) {}
+}
+
 # Main logic
 sub apply_patches {
     # Get command-line arguments
@@ -109,21 +118,27 @@ sub apply_patches {
     my @allPatches = process_patches($name);
 
     # Find necessary files
-    my $cli_jar = find_files("revanced-cli*.jar");
-    my $integrations_apk = find_files("revanced-integrations*.apk");
-    my $patches_jar = find_files("revanced-patches*.jar");
+    my $cli = find_files("revanced-cli*.jar");
+    my $integrations = find_files("revanced-integrations*.apk");
+    my $patches = find_files("revanced-patches*.jar");
+
+    # Construct the APK filename
+    my $apk = "$name-v$version.apk";
+
+    # Remove x86 and x86_64 libraries from the APK
+    remove_architecture_libs($apk);
 
     # Construct and execute patch command
-    my $patch_cmd = "java -jar $cli_jar patch "
-                  . "--merge $integrations_apk "
-                  . "--patch-bundle $patches_jar "
+    my $patch_cmd = "java -jar $cli patch "
+                  . "--merge $integrations "
+                  . "--patch-bundle $patches "
                   . "--out patched-$name-v$version.apk "
                   . join(" ", @allPatches) . " "
-                  . "$name-v$version.apk";
+                  . $apk;
     execute_cmd($patch_cmd);
 
     # Remove the original APK
-    unlink "$name-v$version.apk" or warn "Could not unlink $name-v$version.apk: $!";
+    unlink $apk or warn "Could not unlink $apk: $!";
 
     # Find apksigner tool
     my $apksigner = find_apksigner($android_sdk_root);
