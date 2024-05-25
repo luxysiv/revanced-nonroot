@@ -51,7 +51,7 @@ sub download_resources {
     my @repos = qw(revanced-patches revanced-cli revanced-integrations);
 
     foreach my $repo (@repos) {
-        my $github_api_url = "https://api.github.com/repos/inotia00/$repo/releases/latest";
+        my $github_api_url = "https://api.github.com/repos/revanced/$repo/releases/latest";
 
         my $content = req($github_api_url);
         my $release_data = decode_json($content);
