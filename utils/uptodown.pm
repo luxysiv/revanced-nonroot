@@ -37,13 +37,14 @@ sub req {
     my $timestamp = strftime("%Y-%m-%d %H:%M:%S", localtime);
     if ($response->is_success) {
         my $size = length($response->decoded_content);
+        my $final_url = $response->base; # Lấy URL phản hồi cuối cùng
         if ($output ne '-') {
             open(my $fh, '>', $output) or die "Could not open file '$output' $!";
             print $fh $response->decoded_content;
             close($fh);
-            print "$timestamp URL:$url [$size] -> \"$output\" \n";
+            print "$timestamp URL:$final_url [$size/$size] -> \"$output\" [1]\n";
         } else {
-            print "$timestamp URL:$url [$size] -> \"-\" \n";
+            print "$timestamp URL:$final_url [$size/$size] -> \"-\" [1]\n";
         }
         return $response->decoded_content;
     } else {
