@@ -6,25 +6,49 @@ use warnings;
 use JSON;
 use Env;
 use Exporter 'import';
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Headers;
+use POSIX qw(strftime);
 
 our @EXPORT_OK = qw(apkmirror);
 
 sub req {
     my ($url, $output) = @_;
     $output ||= '-';
-    my $headers = join(' ',
-        '--header="User-Agent: Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0"',
-        '--header="Content-Type: application/octet-stream"',
-        '--header="Accept-Language: en-US,en;q=0.9"',
-        '--header="Connection: keep-alive"',
-        '--header="Upgrade-Insecure-Requests: 1"',
-        '--header="Cache-Control: max-age=0"',
-        '--header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"'
+
+    my $ua = LWP::UserAgent->new(
+        agent => 'Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0',
+        timeout => 30,
     );
 
-    my $command = "wget $headers --keep-session-cookies --timeout=30 -nv -O $output \"$url\"";
-    my $content = `$command`;
-    return $content;
+    my $headers = HTTP::Headers->new(
+        'Content-Type' => 'application/octet-stream',
+        'Accept-Language' => 'en-US,en;q=0.9',
+        'Connection' => 'keep-alive',
+        'Upgrade-Insecure-Requests' => '1',
+        'Cache-Control' => 'max-age=0',
+        'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
+    );
+
+    my $request = HTTP::Request->new(GET => $url, $headers);
+    my $response = $ua->request($request);
+
+    my $timestamp = strftime("%Y-%m-%d %H:%M:%S", localtime);
+    if ($response->is_success) {
+        my $size = length($response->decoded_content);
+        if ($output ne '-') {
+            open(my $fh, '>', $output) or die "Could not open file '$output' $!";
+            print $fh $response->decoded_content;
+            close($fh);
+            print "$timestamp URL:$url [$size] -> \"$output\" \n";
+        } else {
+            print "$timestamp URL:$url [$size] -> \"-\" \n";
+        }
+        return $response->decoded_content;
+    } else {
+        die "HTTP GET error: " . $response->status_line;
+    }
 }
 
 sub filter_lines {
@@ -56,16 +80,16 @@ sub filter_lines {
         $index++;
     }
 
-    @$buffer_ref = @result_buffer; 
+    @$buffer_ref = @result_buffer;
 }
 
 sub get_supported_version {
     my $pkg_name = shift;
     return unless defined $pkg_name;
     my $filename = 'patches.json';
-    
+
     open(my $fh, '<', $filename) or die "Could not open file '$filename' $!";
-    local $/; 
+    local $/;
     my $json_text = <$fh>;
     close($fh);
 
@@ -74,7 +98,7 @@ sub get_supported_version {
 
     foreach my $patch (@{$data}) {
         my $compatible_packages = $patch->{'compatiblePackages'};
-    
+
         if ($compatible_packages && ref($compatible_packages) eq 'ARRAY') {
             foreach my $package (@$compatible_packages) {
                 if (
@@ -88,7 +112,7 @@ sub get_supported_version {
             }
         }
     }
-    my $version = (sort {$b cmp $a} keys %versions)[0];
+    my $version = (sort { $b cmp $a } keys %versions)[0];
     return $version;
 }
 
@@ -141,7 +165,7 @@ sub apkmirror {
     my $download_page_url;
     for my $line (@lines) {
         if ($line =~ /.*href="(.*[^"]*\/)"/) {
-            $download_page_url = $1; 
+            $download_page_url = $1;
             unless ($download_page_url =~ /^https:\/\/www\.apkmirror\.com/) {
                 $download_page_url = "https://www.apkmirror.com$1";
             }
@@ -156,7 +180,7 @@ sub apkmirror {
     my $dl_apk_url;
     for my $line (@lines) {
         if ($line =~ /href="(.*key=[^"]*)"/) {
-            $dl_apk_url = $1; 
+            $dl_apk_url = $1;
             unless ($dl_apk_url =~ /^https:\/\/www\.apkmirror\.com/) {
                 $dl_apk_url = "https://www.apkmirror.com$1";
             }
@@ -171,7 +195,7 @@ sub apkmirror {
     my $final_url;
     for my $line (@lines) {
         if ($line =~ /href="(.*key=[^"]*)"/) {
-            $final_url = $1; 
+            $final_url = $1;
             unless ($final_url =~ /^https:\/\/www\.apkmirror\.com/) {
                 $final_url = "https://www.apkmirror.com$1";
             }

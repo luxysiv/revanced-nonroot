@@ -6,6 +6,9 @@ use warnings;
 use JSON;
 use File::Basename;
 use File::Glob ':glob';
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Headers;
 
 use Exporter 'import';
 
@@ -15,22 +18,41 @@ our @EXPORT_OK = qw(github_release);
 sub req {
     my ($url, $method, $data, $is_file) = @_;
     my $token = $ENV{'GITHUB_TOKEN'};
+    
+    unless ($token) {
+        die "GITHUB_TOKEN environment variable is not set.";
+    }
 
-    my $cmd = "curl -s -H 'Authorization: token $token' -H 'Content-Type: application/json'";
-    $cmd .= " -X $method" if $method;
+    my $ua = LWP::UserAgent->new;
+    my $headers = HTTP::Headers->new(
+        'Authorization' => "token $token",
+        'Content-Type'  => 'application/json'
+    );
+
+    my $request;
     if ($method eq 'POST' && defined $data) {
         if ($is_file) {
-            $cmd .= " --data-binary \@$data";
+            open my $fh, '<', $data or die "Could not open file '$data' $!";
+            local $/;
+            my $file_content = <$fh>;
+            close $fh;
+            $request = HTTP::Request->new($method => $url, $headers, $file_content);
+            $request->header('Content-Type' => 'application/octet-stream');
         } else {
-            $cmd .= " --data '\@$data'";
+            $request = HTTP::Request->new($method => $url, $headers, $data);
         }
+    } elsif ($method eq 'DELETE') {
+        $request = HTTP::Request->new($method => $url, $headers);
+    } else {
+        $request = HTTP::Request->new($method => $url, $headers);
     }
-    $cmd .= " $url";
 
-    my $response = `$cmd`;
-    return $response;
+    my $response = $ua->request($request);
+    
+    if ($response->is_success) {
+        return $response->decoded_content;
+    } else {}
 }
-
 
 # Function to create the body of the release
 sub create_body_release {
@@ -120,10 +142,7 @@ sub github_release {
     } else {
         # Create a new release if it doesn't exist
         my $release_data = create_body_release($patchver, $integrationsver, $cliver);
-        open my $fh, '>', 'release_data.json' or die $!;
-        print $fh $release_data;
-        close $fh;
-        my $new_release = req($api_releases, 'POST', 'release_data.json');
+        my $new_release = req($api_releases, 'POST', $release_data);
         my $new_release_json = decode_json($new_release);
         my $release_id = $new_release_json->{id};
         $upload_url_apk = "$upload_releases/$release_id/assets?name=$apk_file_name";

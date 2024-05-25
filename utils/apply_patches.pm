@@ -8,6 +8,8 @@ use File::Find;
 use Cwd;
 use Env;
 use File::Spec;
+use Archive::Zip qw(:ERROR_CODES :CONSTANTS);
+use IPC::Run qw(run);
 use Exporter 'import';
 
 our @EXPORT_OK = qw(apply_patches);
@@ -61,10 +63,10 @@ sub process_patches {
 
     my @allPatches;
     foreach my $patch (@includePatches) {
-        push @allPatches, "--include \"$patch\"";
+        push @allPatches, "--include=$patch";
     }
     foreach my $patch (@excludePatches) {
-        push @allPatches, "--exclude \"$patch\"";
+        push @allPatches, "--exclude=$patch";
     }
 
     return @allPatches;
@@ -77,10 +79,10 @@ sub find_files {
     return $file;
 }
 
-# Subroutine to construct and execute a command
+# Subroutine to construct and execute a command using IPC::Run
 sub execute_cmd {
-    my ($cmd) = @_;
-    system($cmd) == 0 or die "Failed to execute: $cmd";
+    my (@cmd) = @_;
+    run \@cmd or die "Failed to execute: @cmd";
 }
 
 # Subroutine to find apksigner
@@ -96,13 +98,26 @@ sub find_apksigner {
     return $apksigner;
 }
 
-# Subroutine to remove x86 and x86_64 libraries from the APK using the zip command
+# Subroutine to remove x86 and x86_64 libraries from the APK using Archive::Zip
 sub remove_architecture_libs {
     my ($apk) = @_;
-    my $zip_cmd = "zip --delete $apk 'lib/x86/*' 'lib/x86_64/*' > /dev/null 2>&1";
-    system($zip_cmd);
+    
+    my $zip = Archive::Zip->new();
+    unless ($zip->read($apk) == AZ_OK) {
+        die "Cannot read APK file: $apk";
+    }
 
-    unless ($? == 0) {}
+    # Remove x86 and x86_64 libraries
+    foreach my $member ($zip->membersMatching('^lib/x86/.*')) {
+        $zip->removeMember($member);
+    }
+    foreach my $member ($zip->membersMatching('^lib/x86_64/.*')) {
+        $zip->removeMember($member);
+    }
+
+    unless ($zip->overwrite() == AZ_OK) {
+        die "Cannot write updated APK file: $apk";
+    }
 }
 
 # Main logic
@@ -129,13 +144,15 @@ sub apply_patches {
     remove_architecture_libs($apk);
 
     # Construct and execute patch command
-    my $patch_cmd = "java -jar $cli patch "
-                  . "--merge $integrations "
-                  . "--patch-bundle $patches "
-                  . "--out patched-$name-v$version.apk "
-                  . join(" ", @allPatches) . " "
-                  . $apk;
-    execute_cmd($patch_cmd);
+    my @patch_cmd = (
+        "java", "-jar", $cli, "patch",
+        "--merge", $integrations,
+        "--patch-bundle", $patches,
+        "--out", "patched-$name-v$version.apk",
+        @allPatches,
+        $apk
+    );
+    execute_cmd(@patch_cmd);
 
     # Remove the original APK
     unlink $apk or warn "Could not unlink $apk: $!";
@@ -146,14 +163,16 @@ sub apply_patches {
     # Construct and execute sign command
     my $input_apk = "patched-$name-v$version.apk";
     my $output_apk = "$name-revanced-v$version.apk";
-    my $sign_cmd = "$apksigner sign --verbose "
-                 . "--ks ./etc/public.jks "
-                 . "--ks-key-alias public "
-                 . "--ks-pass pass:public "
-                 . "--key-pass pass:public "
-                 . "--in $input_apk "
-                 . "--out $output_apk";
-    execute_cmd($sign_cmd);
+    my @sign_cmd = (
+        $apksigner, "sign", "--verbose",
+        "--ks", "./etc/public.jks",
+        "--ks-key-alias", "public",
+        "--ks-pass", "pass:public",
+        "--key-pass", "pass:public",
+        "--in", $input_apk,
+        "--out", $output_apk
+    );
+    execute_cmd(@sign_cmd);
 
     # Remove the patched APK file
     unlink $input_apk or warn "Could not unlink $input_apk: $!";

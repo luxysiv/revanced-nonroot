@@ -5,6 +5,10 @@ use strict;
 use warnings;
 use JSON;
 use Env;
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Headers;
+use POSIX qw(strftime);
 use Exporter 'import';
 
 our @EXPORT_OK = qw(uptodown);
@@ -12,20 +16,39 @@ our @EXPORT_OK = qw(uptodown);
 sub req {
     my ($url, $output) = @_;
     $output ||= '-';
-    my $headers = join(' ',
-        '--header="User-Agent: Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0"',
-        '--header="Content-Type: application/octet-stream"',
-        '--header="Accept-Language: en-US,en;q=0.9"',
-        '--header="Connection: keep-alive"',
-        '--header="Upgrade-Insecure-Requests: 1"',
-        '--header="Cache-Control: max-age=0"',
-        '--header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"'
+
+    my $ua = LWP::UserAgent->new(
+        agent => 'Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0',
+        timeout => 30,
     );
 
-    my $command = "wget $headers --keep-session-cookies --timeout=30 -nv -O $output \"$url\"";
-    my $content = `$command`;
-    die "Failed to execute $command: $?" if $? != 0;
-    return $content;
+    my $headers = HTTP::Headers->new(
+        'Content-Type' => 'application/octet-stream',
+        'Accept-Language' => 'en-US,en;q=0.9',
+        'Connection' => 'keep-alive',
+        'Upgrade-Insecure-Requests' => '1',
+        'Cache-Control' => 'max-age=0',
+        'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
+    );
+
+    my $request = HTTP::Request->new(GET => $url, $headers);
+    my $response = $ua->request($request);
+
+    my $timestamp = strftime("%Y-%m-%d %H:%M:%S", localtime);
+    if ($response->is_success) {
+        my $size = length($response->decoded_content);
+        if ($output ne '-') {
+            open(my $fh, '>', $output) or die "Could not open file '$output' $!";
+            print $fh $response->decoded_content;
+            close($fh);
+            print "$timestamp URL:$url [$size] -> \"$output\" \n";
+        } else {
+            print "$timestamp URL:$url [$size] -> \"-\" \n";
+        }
+        return $response->decoded_content;
+    } else {
+        die "HTTP GET error: " . $response->status_line;
+    }
 }
 
 sub filter_lines {
