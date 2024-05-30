@@ -1,34 +1,58 @@
-name: Patch Revanced 
-on:
+name: Patch Revanced
+on: 
   workflow_dispatch:
-    
+
 jobs:
-  build:
-    name: Patch YouTube 
+  patch-apps:
+    name: Patch apps 
     permissions: write-all
     runs-on: ubuntu-latest
     env:
+      GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+    strategy:
+      matrix:
+        include:
+          - app_name: "tiktok"
+            source: "revanced"
+          - app_name: "youtube"
+            source: "revanced"
+          - app_name: "youtube-music"
+            source: "revanced"
+          - app_name: "youtube-music"
+            source: "revanced-extended"
+          - app_name: "youtube"
+            source: "revanced-extended"
+          - app_name: "reddit"
+            source: "revanced-extended"
+          - app_name: "x"
+            source: "revanced"
+
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@main  
+      - name: Checkout Repository
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
 
-    - name: Install Perl
-      uses: shogo82148/actions-setup-perl@v1
-      with:
-        perl-version: "5.38"
+      - name: Install Python
+        uses: actions/setup-python@main
+        with:
+          python-version: 3.11
 
-    - name: Install dependencies
-      run: cpanm --installdeps --notest .
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
 
-    - name: Patch Revanced
-      run: perl revanced.pl
-             
-    - name: Delete workflow runs
-      uses: Mattraks/delete-workflow-runs@v2
-      with:
-        token: ${{ github.token }}
-        repository: ${{ github.repository }}
-        retain_days: 0
-        keep_minimum_runs: 1
+      - name: Patch Apps 
+        env:
+          APP_NAME: ${{ matrix.app_name }}
+          SOURCE: ${{ matrix.source }}
+        run: python -m src   
+
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 0
+          keep_minimum_runs: 1
