@@ -1,0 +1,11 @@
+{
+  "matrix": [
+    { "app_name": "tiktok", "source": "revanced" },
+    { "app_name": "youtube", "source": "revanced" },
+    { "app_name": "youtube-music", "source": "revanced" },
+    { "app_name": "youtube-music", "source": "revanced-extended" },
+    { "app_name": "youtube", "source": "revanced-extended" },
+    { "app_name": "reddit", "source": "revanced-extended" },
+    { "app_name": "x", "source": "revanced" }
+  ]
+}
