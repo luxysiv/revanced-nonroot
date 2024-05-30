@@ -1,19 +1,19 @@
 [
     {
-        "name": "revanced"
+        "name": "revanced-extended"
     },
     {
-        "user": "revanced",
+        "user": "inotia00",
         "repo": "revanced-cli",
         "tag": "latest"
     },
     {
-        "user": "revanced",
+        "user": "inotia00",
         "repo": "revanced-patches",
         "tag": "latest"
     },
     {
-        "user": "revanced",
+        "user": "inotia00",
         "repo": "revanced-integrations",
         "tag": "latest"
     }
