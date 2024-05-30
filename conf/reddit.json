@@ -1,0 +1,9 @@
+{
+    "org": "redditinc",
+    "name": "reddit",
+    "type": "APK", 
+    "arch": "universal",
+    "dpi": "nodpi",
+    "package" : "com.reddit.frontpage",
+    "version" : ""
+}
