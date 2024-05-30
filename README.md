@@ -16,6 +16,17 @@
   - Apps releases will be grouped by the name specified in the [./sources/](./sources) JSON
   - Download APK at Releases
 
+**Available at this repository**
+ - YouTube Revanced
+ - YouTube Music Revanced
+ - YouTube Revanced Extended
+ - YouTube Music Revanced Extended
+ - Reddit Revanced
+ - Reddit Revanced Extended
+ - Tiktok Revanced
+ - X Revanced
+   > You can fork and add more sources and apps
+
 **Download page** (Take from latest release) (included [Revanced GmsCore](https://github.com/revanced/gmscore))
   - Eng page: https://revanced-nonroot.pages.dev
   - Vi page: https://revanced-nonroot.vercel.app
