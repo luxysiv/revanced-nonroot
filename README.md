@@ -4,7 +4,7 @@
  - Add sources patches at [./sources/](./sources)
  - Add apps to patch at [./conf/](./conf)
  - Format is json
- - Controls apps to patch at [.github/workflows/build.yml](.github/workflows/build.yml)
+ - Controls apps to patch at [patch-config.json](patch-config.json)
 
 **Latest release information**
   - [Revanced](https://github.com/revanced/revanced-patches/releases/latest)
@@ -13,7 +13,7 @@
 **Note**
   - From now, ReVanced use [Revanced GmsCore](https://github.com/revanced/gmscore) to work.
   - APK without **x86** and **x86_64**
-  - Apps releases will be grouped by the name specified in the [./sources/](./sources) JSON
+  - Apps releases will be grouped by the name of json in the [./sources/](./sources)
   - Download APK at Releases
 
 **Available at this repository**
@@ -21,7 +21,6 @@
  - YouTube Music Revanced
  - YouTube Revanced Extended
  - YouTube Music Revanced Extended
- - Reddit Revanced
  - Reddit Revanced Extended
  - Tiktok Revanced
  - X Revanced
