@@ -5,6 +5,16 @@
  - Add apps to patch at [./conf/](./conf)
  - Format is json
  - Controls apps to patch at [patch-config.json](patch-config.json)
+ > Example usage:
+ ```json
+ {
+  "patch_list": [
+    { "app_name": "youtube", "source": "revanced" },
+    { "app_name": "youtube", "source": "revanced-extended" },
+    { "app_name": "name_of_app_json", "source": "name_of_source_json" }
+  ]
+}
+```
 
 **Latest release information**
   - [Revanced](https://github.com/revanced/revanced-patches/releases/latest)
@@ -19,11 +29,6 @@
 **Available at this repository**
  - YouTube Revanced
  - YouTube Music Revanced
- - YouTube Revanced Extended
- - YouTube Music Revanced Extended
- - Reddit Revanced Extended
- - Tiktok Revanced
- - X Revanced
    > You can fork and add more sources and apps
 
 **Download page** (Take from latest release) (included [Revanced GmsCore](https://github.com/revanced/gmscore))
@@ -31,6 +36,6 @@
   - Vi page: https://revanced-nonroot.vercel.app
 
 **Setting Patches**
- - Edit in [./patches/[app_name]-[name-of-source-json].txt](./patches/)   
+ - Edit in [./patches/[name_of_app_json]-[name-of-source-json].txt](./patches/)   
  - **+ Patch_name** to include patch
  - **- Patch_name** to exclude patch 
