@@ -11,7 +11,7 @@
     {
         "user": "revanced",
         "repo": "revanced-cli",
-        "tag": "latest" // Use pre, dev and blank. blank is newest
+        "tag": "latest" // Use prerelease, dev or blank. blank is newest
     },
     {
         "user": "revanced",
