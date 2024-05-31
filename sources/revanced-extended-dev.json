@@ -1,0 +1,20 @@
+[
+    {
+        "name": "revanced-extended"
+    },
+    {
+        "user": "inotia00",
+        "repo": "revanced-cli",
+        "tag": ""
+    },
+    {
+        "user": "inotia00",
+        "repo": "revanced-patches",
+        "tag": "dev"
+    },
+    {
+        "user": "inotia00",
+        "repo": "revanced-integrations",
+        "tag": "dev"
+    }
+]
