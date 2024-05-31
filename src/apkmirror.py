@@ -1,17 +1,12 @@
 import re
 import json
-import cloudscraper
-from bs4 import BeautifulSoup
 
-base_url = "https://www.apkmirror.com"
-scraper = cloudscraper.create_scraper(
-    browser={'custom': 'Mozilla/5.0'}
-)
+from bs4 import BeautifulSoup
+from src import base_url, scraper
 
 def get_download_page(version: str, app_name: str) -> str:
-    conf_file_path = f'./conf/{app_name}.json'
     
-    # Open the configuration file and load its content
+    conf_file_path = f'./conf/{app_name}.json'   
     with open(conf_file_path, 'r') as json_file:
         config = json.load(json_file)
 
@@ -34,6 +29,7 @@ def get_download_page(version: str, app_name: str) -> str:
     return None
 
 def extract_download_link(page: str) -> str:
+    
     response = scraper.get(page)
     response.raise_for_status()
     soup = BeautifulSoup(response.content, "html.parser")
@@ -52,9 +48,8 @@ def extract_download_link(page: str) -> str:
     return None
 
 def get_latest_version(app_name: str) -> str:
-    conf_file_path = f'./conf/{app_name}.json'
     
-    # Open the configuration file and load its content
+    conf_file_path = f'./conf/{app_name}.json'    
     with open(conf_file_path, 'r') as json_file:
         config = json.load(json_file)
         
