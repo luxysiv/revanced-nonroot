@@ -1,7 +1,11 @@
 import os
 import logging
-import requests
+import cloudscraper
 
+base_url = "https://www.apkmirror.com"
+scraper = cloudscraper.create_scraper(
+    browser={'custom': 'Mozilla/5.0'}
+)
 
 # Logging Level
 logging.basicConfig(
