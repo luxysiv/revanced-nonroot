@@ -1,6 +1,5 @@
 name: Patch Revanced
 on:
-
   workflow_dispatch:
 
 jobs:
@@ -24,7 +23,7 @@ jobs:
           script: |
             const fs = require('fs');
             const path = './patch-config.json';
-            const matrix = JSON.parse(fs.readFileSync(path, 'utf8')).matrix;
+            const matrix = JSON.parse(fs.readFileSync(path, 'utf8')).patch_list;
             core.setOutput("matrix", JSON.stringify(matrix));
 
   matrix-patch:
