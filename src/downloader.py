@@ -40,7 +40,7 @@ def download_required(source: str) -> dict:
         repo = repo_info.get('repo', "")
         tag = repo_info.get('tag', "")
 
-        if tag in ["", "dev", "pre"]:
+        if tag in ["", "dev", "prerelease"]:
             url = f"https://api.github.com/repos/{user}/{repo}/releases"
             response = scraper.get(url)
             releases = response.json()
