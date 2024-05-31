@@ -1,14 +1,8 @@
 import json
 import logging
-import cloudscraper
 
-from src import apkmirror, version
+from src import apkmirror, version, scraper 
 
-scraper = cloudscraper.create_scraper(
-    browser={
-        'custom': 'Mozilla/5.0'
-    }
-)
 def download_resource(url: str, name: str) -> str:
     filepath = f"./{name}"
 
@@ -29,7 +23,7 @@ def download_resource(url: str, name: str) -> str:
 
     return filepath
 
-def download_required(source: str) -> str:
+def download_required(source: str) -> dict:
     logging.info("Downloading required resources")
     downloaded_files = {}
     base_url = "https://api.github.com/repos/{}/{}/releases/{}"
@@ -42,23 +36,40 @@ def download_required(source: str) -> str:
         if "name" in repo_info:
             continue
 
-        try:
-            url = base_url.format(repo_info['user'], repo_info['repo'], repo_info['tag'])
+        user = repo_info.get('user', "")
+        repo = repo_info.get('repo', "")
+        tag = repo_info.get('tag', "")
+
+        if tag in ["", "dev", "pre"]:
+            url = f"https://api.github.com/repos/{user}/{repo}/releases"
             response = scraper.get(url)
-            assets = response.json().get("assets", [])
+            releases = response.json()
 
-            for asset in assets:
-                if asset["name"].endswith(".asc"):
-                    continue 
-                filepath = download_resource(asset["browser_download_url"], asset["name"])
-                downloaded_files[repo_info['repo'].replace("/", "")] = filepath
+            if tag == "":
+                latest_release = max(releases, key=lambda x: x['created_at'])
+            elif tag == "dev":
+                dev_releases = [release for release in releases if 'dev' in release['tag_name']]
+                latest_release = max(dev_releases, key=lambda x: x['created_at'])
+            else:  
+                pre_releases = [release for release in releases if release['prerelease']]
+                latest_release = max(pre_releases, key=lambda x: x['created_at'])
 
-        except requests.exceptions.HTTPError as err:
-            logging.error(f"Error downloading resources for {repo_info['user']}/{repo_info['repo']}: {err}")
-            continue
+            latest_tag_name = latest_release['tag_name']
+            url = base_url.format(user, repo, f"tags/{latest_tag_name}")
+        else:
+            url = base_url.format(user, repo, tag)
+
+        response = scraper.get(url)
+        assets = response.json().get("assets", [])
+
+        for asset in assets:
+            if asset["name"].endswith(".asc"):
+                continue 
+            filepath = download_resource(asset["browser_download_url"], asset["name"])
+            downloaded_files[repo_info['repo'].replace("/", "")] = filepath
 
     return downloaded_files
-
+    
 def download_apk(app_name: str) -> str:
     global version
 
@@ -72,7 +83,6 @@ def download_apk(app_name: str) -> str:
 
     version = config['version']
     
-    # If no version in config file, try to get it from patches.json
     if not version:
         versions = set()
         for patch in patches:
@@ -93,9 +103,8 @@ def download_apk(app_name: str) -> str:
 
         
         if versions:
-            version = sorted(versions, reverse=True)[0]
+            version = sorted(versions, reverse=True)[0] #1,2,3 to next lower version 
     
-    # If still no version, get the latest version from apkmirror
     if not version:
         version = apkmirror.get_latest_version(app_name)
 
