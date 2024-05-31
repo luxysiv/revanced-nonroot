@@ -11,12 +11,12 @@
     {
         "user": "revanced",
         "repo": "revanced-cli",
-        "tag": "latest"
+        "tag": "latest" // Use pre, dev and blank. blank is newest
     },
     {
         "user": "revanced",
         "repo": "revanced-patches",
-        "tag": "latest"
+        "tag": "latest" 
     },
     {
         "user": "revanced",
