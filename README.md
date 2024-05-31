@@ -2,8 +2,42 @@
 
 **Now this repository can build more sources and apps**
  - Add sources patches at [./sources/](./sources)
+ > Example usage:
+ ```json
+ [
+    {
+        "name": "revanced" # Used release 
+    },
+    {
+        "user": "revanced",
+        "repo": "revanced-cli",
+        "tag": "latest"
+    },
+    {
+        "user": "revanced",
+        "repo": "revanced-patches",
+        "tag": "latest"
+    },
+    {
+        "user": "revanced",
+        "repo": "revanced-integrations",
+        "tag": "latest"
+    }
+]
+```
  - Add apps to patch at [./conf/](./conf)
- - Format is json
+ > Example usage:
+ ```json
+ {
+    "org": "google-inc",
+    "name": "youtube",
+    "type": "APK", 
+    "arch": "universal", //blank if use universal too
+    "dpi": "nodpi",
+    "package" : "com.google.android.youtube",
+    "version" : "" // Set specific version if you want 
+}
+``` 
  - Controls apps to patch at [patch-config.json](patch-config.json)
  > Example usage:
  ```json
