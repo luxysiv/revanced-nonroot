@@ -1,0 +1,20 @@
+[
+    {
+        "name": "revanced"
+    },
+    {
+        "user": "revanced",
+        "repo": "revanced-cli",
+        "tag": ""
+    },
+    {
+        "user": "revanced",
+        "repo": "revanced-patches",
+        "tag": "dev"
+    },
+    {
+        "user": "revanced",
+        "repo": "revanced-integrations",
+        "tag": "dev"
+    }
+]
