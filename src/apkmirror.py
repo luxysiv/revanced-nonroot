@@ -6,7 +6,7 @@ from src import base_url, scraper
 
 def get_download_page(version: str, app_name: str) -> str:
     
-    conf_file_path = f'./conf/{app_name}.json'   
+    conf_file_path = f'./apps/apkmirror/{app_name}.json'   
     with open(conf_file_path, 'r') as json_file:
         config = json.load(json_file)
 
@@ -49,7 +49,7 @@ def extract_download_link(page: str) -> str:
 
 def get_latest_version(app_name: str) -> str:
     
-    conf_file_path = f'./conf/{app_name}.json'    
+    conf_file_path = f'./apps/apkmirror/{app_name}.json'    
     with open(conf_file_path, 'r') as json_file:
         config = json.load(json_file)
         
