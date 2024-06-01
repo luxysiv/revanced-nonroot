@@ -1,6 +1,11 @@
 **YouTube Revanced** & **YouTube Music Revanced**
 
 **Now this repository can build more sources and apps**
+
+**Script auto change apk's source**
+
+### Usage 
+
  - Add sources patches at [./sources/](./sources)
  > Example usage:
  ```json
@@ -25,7 +30,7 @@
     }
 ]
 ```
- - Add apps to patch at [./conf/](./conf)
+ - Add config APKmirror at [./apps/apkmirror/](./apps/apkmirror/)
  > Example usage:
  ```json
  {
@@ -37,7 +42,25 @@
     "package" : "com.google.android.youtube",
     "version" : "" // Set specific version if you want 
 }
-``` 
+```
+- Add config APKpure at [./apps/apkpure/](./apps/apkpure/)
+ > Example usage:
+ ```json
+{
+    "name": "youtube",
+    "package" : "com.google.android.youtube",
+    "version" : ""
+}
+```
+- Add config uptodown at [./apps/uptodown/](./apps/uptodown/)
+ > Example usage:
+ ```json
+{
+    "name": "youtube",
+    "package" : "com.google.android.youtube",
+    "version" : ""
+}
+```
  - Controls apps to patch at [patch-config.json](patch-config.json)
  > Example usage:
  ```json
@@ -50,26 +73,27 @@
 }
 ```
 
-**Latest release information**
+### Latest release information
   - [Revanced](https://github.com/revanced/revanced-patches/releases/latest)
   - [Revanced Extended](https://github.com/inotia00/revanced-patches/releases/latest)
 
-**Note**
+### Note
   - From now, ReVanced use [Revanced GmsCore](https://github.com/revanced/gmscore) to work.
   - APK without **x86** and **x86_64**
   - Apps releases will be grouped by the name of json in the [./sources/](./sources)
   - Download APK at Releases
 
-**Available at this repository**
+### Available at this repository
  - YouTube Revanced
  - YouTube Music Revanced
    > You can fork and add more sources and apps
 
-**Download page** (Take from latest release) (included [Revanced GmsCore](https://github.com/revanced/gmscore))
+## Download page
+Assets fetch from latest release (included [Revanced GmsCore](https://github.com/revanced/gmscore))
   - Eng page: https://revanced-nonroot.pages.dev
   - Vi page: https://revanced-nonroot.vercel.app
 
-**Setting Patches**
- - Edit in [./patches/[name_of_app_json]-[name-of-source-json].txt](./patches/)   
+### Setting Patches
+ - Add and edit in [./patches/[name_of_app_json]-[name-of-source-json].txt](./patches/)  
  - **+ Patch_name** to include patch
  - **- Patch_name** to exclude patch 
