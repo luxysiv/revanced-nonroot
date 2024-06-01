@@ -1,7 +1,7 @@
 import json
 import logging
 
-from src import apkmirror, version, scraper 
+from src import apkmirror, apkpure, uptodown, version, scraper 
 
 def download_resource(url: str, name: str) -> str:
     filepath = f"./{name}"
@@ -70,47 +70,139 @@ def download_required(source: str) -> dict:
 
     return downloaded_files
     
-def download_apk(app_name: str) -> str:
+def download_apkmirror(app_name: str) -> str:
     global version
 
-    with open("./patches.json", "r") as patches_file:
-        patches = json.load(patches_file)
+    try:
+        with open("./patches.json", "r") as patches_file:
+            patches = json.load(patches_file)
 
-    conf_file_path = f'./conf/{app_name}.json'
+        conf_file_path = f'./apps/apkmirror/{app_name}.json'
 
-    with open(conf_file_path, 'r') as json_file:
-        config = json.load(json_file)
+        with open(conf_file_path, 'r') as json_file:
+            config = json.load(json_file)
 
-    version = config['version']
-    
-    if not version:
-        versions = set()
-        for patch in patches:
-            compatible_packages = patch.get("compatiblePackages")
-            if compatible_packages and isinstance(compatible_packages, list):
-                for package in compatible_packages:
-                    if (
-                        package.get("name") == config['package'] and
-                        package.get("versions") is not None and
-                        isinstance(package["versions"], list) and
-                        package["versions"]
-                    ):
-                        versions.update(
-                            map(
-                                str.strip, package["versions"]
-                            )
-                        )
-
+        version = config['version']
         
-        if versions:
-            version = sorted(versions, reverse=True)[0] #1,2,3 to next lower version 
-    
-    if not version:
-        version = apkmirror.get_latest_version(app_name)
+        if not version:
+            versions = set()
+            for patch in patches:
+                compatible_packages = patch.get("compatiblePackages")
+                if compatible_packages and isinstance(compatible_packages, list):
+                    for package in compatible_packages:
+                        if (
+                            package.get("name") == config['package'] and
+                            package.get("versions") is not None and
+                            isinstance(package["versions"], list) and
+                            package["versions"]
+                        ):
+                            versions.update(
+                                map(
+                                    str.strip, package["versions"]
+                                )
+                            )
 
-    download_page = apkmirror.get_download_page(version, app_name)
-    download_link = apkmirror.extract_download_link(download_page)
+            if versions:
+                version = sorted(versions, reverse=True)[0] #1,2,3 to next lower version 
+        
+        if not version:
+            version = apkmirror.get_latest_version(app_name)
 
-    filename = f"{app_name}-v{version}.apk"
+        download_page = apkmirror.get_download_page(version, app_name)
+        download_link = apkmirror.extract_download_link(download_page)
+
+        filename = f"{app_name}-v{version}.apk"
+        
+        return download_resource(download_link, filename)
+    except Exception as e:
+        return None
+        
+def download_apkpure(app_name: str) -> str:
+    global version
+
+    try:
+        with open("./patches.json", "r") as patches_file:
+            patches = json.load(patches_file)
+
+        conf_file_path = f'./apps/apkpure/{app_name}.json'
+
+        with open(conf_file_path, 'r') as json_file:
+            config = json.load(json_file)
+
+        version = config['version']
+        
+        if not version:
+            versions = set()
+            for patch in patches:
+                compatible_packages = patch.get("compatiblePackages")
+                if compatible_packages and isinstance(compatible_packages, list):
+                    for package in compatible_packages:
+                        if (
+                            package.get("name") == config['package'] and
+                            package.get("versions") is not None and
+                            isinstance(package["versions"], list) and
+                            package["versions"]
+                        ):
+                            versions.update(
+                                map(
+                                    str.strip, package["versions"]
+                                )
+                            )
+
+            if versions:
+                version = sorted(versions, reverse=True)[0] #1,2,3 to next lower version 
+        
+        if not version:
+            version = apkpure.get_latest_version(app_name)
+
+        download_link = apkpure.get_download_link(version, app_name)
+        filename = f"{app_name}-v{version}.apk"
+        
+        return download_resource(download_link, filename)
+    except Exception as e:
+        return None
     
-    return download_resource(download_link, filename)
+def download_uptodown(app_name: str) -> str:
+    global version
+
+    try:
+        with open("./patches.json", "r") as patches_file:
+            patches = json.load(patches_file)
+
+        conf_file_path = f'./apps/uptodown/{app_name}.json'
+
+        with open(conf_file_path, 'r') as json_file:
+            config = json.load(json_file)
+
+        version = config['version']
+        
+        if not version:
+            versions = set()
+            for patch in patches:
+                compatible_packages = patch.get("compatiblePackages")
+                if compatible_packages and isinstance(compatible_packages, list):
+                    for package in compatible_packages:
+                        if (
+                            package.get("name") == config['package'] and
+                            package.get("versions") is not None and
+                            isinstance(package["versions"], list) and
+                            package["versions"]
+                        ):
+                            versions.update(
+                                map(
+                                    str.strip, package["versions"]
+                                )
+                            )
+
+            if versions:
+                version = sorted(versions, reverse=True)[0] #1,2,3 to next lower version 
+        
+        if not version:
+            version = uptodown.get_latest_version(app_name)
+
+        download_link = uptodown.get_download_link(version, app_name)
+        filename = f"{app_name}-v{version}.apk"
+        
+        return download_resource(download_link, filename)
+    except Exception as e:
+        return None
