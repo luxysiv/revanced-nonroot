@@ -1,0 +1,9 @@
+{
+    "org": "x-corp",
+    "name": "twitter",
+    "type": "APK", 
+    "arch": "",
+    "dpi": "",
+    "package" : "com.twitter.android",
+    "version" : ""
+}
