@@ -15,7 +15,11 @@ from src import (
 
 def run_build(app_name: str, source: str) -> str:
     download_files = downloader.download_required(source)
-    input_apk_filepath = downloader.download_apk(app_name)
+    input_apk_filepath = downloader.download_apkmirror(app_name)
+    if not input_apk_filepath:
+        input_apk_filepath = downloader.download_uptodown(app_name)
+    if not input_apk_filepath:
+        input_apk_filepath = downloader.download_apkpure(app_name)
     exclude_patches = []
     include_patches = []
     
@@ -88,7 +92,7 @@ def run_build(app_name: str, source: str) -> str:
             max(glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')), key=os.path.getctime),
             "sign",
             "--verbose",
-            "--ks", "./etc/public.jks",
+            "--ks", "./keystore/public.jks",
             "--ks-pass", "pass:public",
             "--key-pass", "pass:public",
             "--ks-key-alias", "public",
