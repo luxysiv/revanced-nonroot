@@ -8,8 +8,6 @@ scraper.headers.update(
     {'User-Agent': 'Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0'}
 )
 
-# In nội dung phản hồi
-print(response.text)
 # Logging Level
 logging.basicConfig(
   level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
