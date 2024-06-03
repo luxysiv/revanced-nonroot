@@ -31,10 +31,7 @@ jobs:
     strategy:
       matrix:
         include: ${{ fromJson(needs.read-config.outputs.matrix) }}
-    env:
-      GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-      GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
     steps:
       - name: Checkout Repository
         uses: actions/checkout@main
@@ -51,4 +48,7 @@ jobs:
         env:
           APP_NAME: ${{ matrix.app_name }}
           SOURCE: ${{ matrix.source }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python -m src
