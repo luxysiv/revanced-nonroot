@@ -1,6 +1,13 @@
 import json
+import logging
 
-from src import apkmirror, apkpure, uptodown, version, scraper 
+from src import (
+    apkpure, 
+    version, 
+    scraper, 
+    uptodown, 
+    apkmirror 
+)
 
 def download_resource(url: str, name: str) -> str:
     filepath = f"./{name}"
@@ -15,6 +22,10 @@ def download_resource(url: str, name: str) -> str:
             for chunk in res.iter_content(chunk_size=8192):
                 file.write(chunk)
                 downloaded_size += len(chunk)
+
+        logging.info(
+            f"URL: {url} [{downloaded_size}/{total_size}] -> {name}"
+        )
 
     return filepath
 
