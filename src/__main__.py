@@ -50,6 +50,8 @@ def run_build(app_name: str, source: str) -> str:
     _, stderr = libs_process.communicate()
     libs_return_code = libs_process.returncode
         
+    output_apk_filepath = f"{app_name}-patch-v{downloader.version}.apk"
+    
     patch_process = subprocess.Popen(
         [
             "java",
@@ -59,7 +61,7 @@ def run_build(app_name: str, source: str) -> str:
             "--patch-bundle",
             download_files["revanced-patches"],
             "--out",
-            f"{app_name}-patch-v{downloader.version}.apk",
+            output_apk_filepath,
             "--merge",
             download_files["revanced-integrations"],
             input_apk_filepath,
@@ -96,7 +98,7 @@ def run_build(app_name: str, source: str) -> str:
             "--ks-pass", "pass:public",
             "--key-pass", "pass:public",
             "--ks-key-alias", "public",
-            "--in", f"{app_name}-patch-v{downloader.version}.apk",
+            "--in", output_apk_filepath,
             "--out", f"{app_name}-{name}-v{downloader.version}.apk"
         ],
         stdout=subprocess.PIPE,
@@ -112,8 +114,10 @@ def run_build(app_name: str, source: str) -> str:
         logging.error("An error occurred while signing the APK")
         sys.exit(1)
     
-    os.remove(f'{app_name}-patch-v{downloader.version}.apk')
-    release.create_github_release(github_access_token, repository_owner, repository_name, app_name, source)
+    signed_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
+    
+    os.remove(output_apk_filepath)
+    release.create_github_release(github_access_token, repository_owner, repository_name, app_name, source, download_files, signed_apk_filepath)
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")

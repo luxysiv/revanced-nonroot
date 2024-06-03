@@ -1,18 +1,12 @@
 import os
-import glob
-import cloudscraper
 import re
 import json
 
-from src import scraper 
+from src import scraper
 
 def convert_title(text):
     pattern = re.compile(r'\b([a-z0-9]+(?:-[a-z0-9]+)*)\b', re.IGNORECASE)
     return pattern.sub(lambda match: match.group(1).replace('-', ' ').title(), text)
-
-def find_file(pattern):
-    files = glob.glob(pattern)
-    return files[0] if files else None
 
 def extract_version(file_path):
     if file_path:
@@ -22,18 +16,16 @@ def extract_version(file_path):
             return match.group(1)
     return 'unknown'
 
-def create_github_release(access_token, repo_owner, repo_name, app_name, source):
-
+def create_github_release(access_token, repo_owner, repo_name, app_name, source, download_files, apk_file_path):
     source_path = f'./sources/{source}.json'
     with open(source_path, 'r') as json_file:
         info = json.load(json_file)
 
     name = info[0].get("name", "")
-    
-    patch_file_path = find_file('revanced-patches*.jar')
-    integrations_file_path = find_file('revanced-integrations*.apk')
-    cli_file_path = find_file('revanced-cli*.jar')
-    apk_file_path = find_file(f'{app_name}-{name}-v*.apk')
+
+    patch_file_path = download_files["revanced-patches"]
+    integrations_file_path = download_files["revanced-integrations"]
+    cli_file_path = download_files["revanced-cli"]
 
     patchver = extract_version(patch_file_path)
     integrationsver = extract_version(integrations_file_path)
@@ -79,7 +71,6 @@ def create_github_release(access_token, repo_owner, repo_name, app_name, source)
 - Please **download** it from [HERE](https://github.com/revanced/gmscore/releases/latest).
         """
 
-        
         name_from_json = convert_title(name)
         release_name = f"{name_from_json} v{patchver}"
 
