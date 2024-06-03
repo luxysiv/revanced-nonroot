@@ -4,7 +4,11 @@ import cloudscraper
 
 base_url = "https://www.apkmirror.com"
 scraper = cloudscraper.create_scraper(
-    browser={'custom': 'Mozilla/5.0'}
+    browser={
+        'browser': 'chrome',
+        'platform': 'android',
+        'desktop': False
+    }
 )
 
 # Logging Level
