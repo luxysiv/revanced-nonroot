@@ -7,10 +7,7 @@ import subprocess
 
 from src import (
     release,
-    downloader,
-    repository_name,
-    repository_owner,
-    github_access_token
+    downloader
 )
 
 def run_build(app_name: str, source: str) -> str:
@@ -89,6 +86,8 @@ def run_build(app_name: str, source: str) -> str:
 
     name = info[0].get("name", "")
         
+    signed_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
+    
     signing_process = subprocess.Popen(
         [
             max(glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')), key=os.path.getctime),
@@ -99,7 +98,7 @@ def run_build(app_name: str, source: str) -> str:
             "--key-pass", "pass:public",
             "--ks-key-alias", "public",
             "--in", output_apk_filepath,
-            "--out", f"{app_name}-{name}-v{downloader.version}.apk"
+            "--out", signed_apk_filepath
         ],
         stdout=subprocess.PIPE,
     )
@@ -114,10 +113,8 @@ def run_build(app_name: str, source: str) -> str:
         logging.error("An error occurred while signing the APK")
         sys.exit(1)
     
-    signed_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
-    
     os.remove(output_apk_filepath)
-    release.create_github_release(github_access_token, repository_owner, repository_name, app_name, source, download_files, signed_apk_filepath)
+    release.create_github_release(app_name, source, download_files, signed_apk_filepath)
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
