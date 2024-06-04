@@ -80,18 +80,26 @@
 ### Note
   - From now, ReVanced use [Revanced GmsCore](https://github.com/revanced/gmscore) to work.
   - APK without **x86** and **x86_64**
+  - If you want to Release on Github, go to [main.py](./src/__main.py__) edit like
+```python
+    release.create_github_release(app_name, source, download_files, signed_apk_filepath)
+
+    endpoint_url = os.getenv('ENDPOINT_URL')
+    access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+    secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+    bucket_name = os.getenv('BUCKET_NAME')
+    key = f"{app_name}/{signed_apk_filepath}"
+
+    # upload_to_r2(signed_apk_filepath, bucket_name, key, endpoint_url, access_key_id, secret_access_key)
+```
   - Apps releases will be grouped by the name of json in the [./sources/](./sources)
   - Download APK at Releases
 
 ### Available at this repository
- - YouTube Revanced
- - YouTube Music Revanced
+ - [YouTube Revanced](https://pub-7889a234d4144827bef17198ae0e21ce.r2.dev/youtube%2Fyoutube-revanced-v19.16.39.apk)
+ - [YouTube Music Revanced](https://pub-7889a234d4144827bef17198ae0e21ce.r2.dev/youtube-music%2Fyoutube-music-revanced-v7.03.52.apk)
+ - [Revanced GmsCore](https://github.com/revanced/gmscore/releases/latest)
    > You can fork and add more sources and apps
-
-## Download page
-Assets fetch from latest release (included [Revanced GmsCore](https://github.com/revanced/gmscore))
-  - Eng page: https://revanced-nonroot.pages.dev
-  - Vi page: https://revanced-nonroot.vercel.app
 
 ### Setting Patches
  - Add and edit in [./patches/[name_of_app_json]-[name-of-source-json].txt](./patches/)  
