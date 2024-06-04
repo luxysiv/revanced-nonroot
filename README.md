@@ -1,8 +1,12 @@
 **YouTube Revanced** & **YouTube Music Revanced**
 
-**Now this repository can build more sources and apps**
+**Now, this repository can build more sources and apps.**
 
-**Script auto change apk's source**
+**Script auto change APK's source if download APK failure.**
+
+**Upload file to R2 Cloudflare**
+
+**Download link below is R2. It's fast. Click YouTube Revanced or YouTube Music Revanced to download**
 
 ### Download
 **Available at this repository**
