@@ -4,9 +4,8 @@ import json
 
 from src import (
     scraper,
-    repository_name,
-    repository_owner,
-    github_access_token
+    repository,
+    github_token
 )
 
 def convert_title(text):
@@ -42,9 +41,9 @@ def create_github_release(app_name, source, download_files, apk_file_path):
         return
 
     existing_release = scraper.get(
-        f"https://api.github.com/repos/{repository_owner}/{repository_name}/releases/tags/{tag_name}",
+        f"https://api.github.com/repos/{repository}/releases/tags/{tag_name}",
         headers={
-            "Authorization": f"token {github_access_token}"
+            "Authorization": f"token {github_token}"
         }
     ).json()
 
@@ -56,9 +55,9 @@ def create_github_release(app_name, source, download_files, apk_file_path):
             if asset['name'] == os.path.basename(apk_file_path):
                 asset_id = asset['id']
                 delete_response = scraper.delete(
-                    f"https://api.github.com/repos/{repository_owner}/{repository_name}/releases/assets/{asset_id}",
+                    f"https://api.github.com/repos/{repository}/releases/assets/{asset_id}",
                     headers={
-                        "Authorization": f"token {github_access_token}"
+                        "Authorization": f"token {github_token}"
                     }
                 )
 
@@ -86,9 +85,9 @@ def create_github_release(app_name, source, download_files, apk_file_path):
             "body": release_body
         }
         new_release = scraper.post(
-            f"https://api.github.com/repos/{repository_owner}/{repository_name}/releases",
+            f"https://api.github.com/repos/{repository}/releases",
             headers={
-                "Authorization": f"token {github_access_token}",
+                "Authorization": f"token {github_token}",
                 "Content-Type": "application/json"
             },
             data=json.dumps(release_data)
@@ -96,14 +95,14 @@ def create_github_release(app_name, source, download_files, apk_file_path):
 
         existing_release_id = new_release["id"]
 
-    upload_url_apk = f"https://uploads.github.com/repos/{repository_owner}/{repository_name}/releases/{existing_release_id}/assets?name={os.path.basename(apk_file_path)}"
+    upload_url_apk = f"https://uploads.github.com/repos/{repository}/releases/{existing_release_id}/assets?name={os.path.basename(apk_file_path)}"
     with open(apk_file_path, 'rb') as apk_file:
         apk_file_content = apk_file.read()
 
     response = scraper.post(
         upload_url_apk,
         headers={
-            "Authorization": f"token {github_access_token}",
+            "Authorization": f"token {github_token}",
             "Content-Type": "application/vnd.android.package-archive"
         },
         data=apk_file_content

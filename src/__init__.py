@@ -15,6 +15,5 @@ logging.basicConfig(
 # Global version
 version = {}
 
-github_access_token = os.getenv("GITHUB_TOKEN")
-repository_owner = os.getenv("GITHUB_REPOSITORY_OWNER")
-repository_name = os.getenv("GITHUB_REPOSITORY_NAME")
+github_token = os.getenv('GITHUB_TOKEN')
+repository = os.getenv('GITHUB_REPOSITORY')
