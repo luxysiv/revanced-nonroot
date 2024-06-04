@@ -10,7 +10,7 @@ scraper.headers.update(
 
 # Logging Level
 logging.basicConfig(
-  level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
+  level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
 )
 # Global version
 version = {}
