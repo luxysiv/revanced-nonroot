@@ -3,8 +3,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  read-config:
-    name: Read Matrix configuration
+  patch-apps:
+    name: Read Matrix Configuration 
     runs-on: ubuntu-latest
 
     outputs:
@@ -28,10 +28,12 @@ jobs:
 
   matrix-patch:
     name: Patch Applications
-    needs: read-config
+    needs: patch-apps
     permissions: write-all
     runs-on: ubuntu-latest
     env:
+      GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
