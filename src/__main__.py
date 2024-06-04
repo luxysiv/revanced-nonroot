@@ -4,11 +4,24 @@ import json
 import glob
 import logging
 import subprocess
-
+import boto3
+from botocore.client import Config
 from src import (
     release,
     downloader
 )
+
+def upload_to_r2(file_path, bucket_name, key, endpoint_url, access_key_id, secret_access_key):
+    s3 = boto3.client('s3',
+                      endpoint_url=endpoint_url,
+                      aws_access_key_id=access_key_id,
+                      aws_secret_access_key=secret_access_key,
+                      config=Config(signature_version='s3v4'))
+
+    with open(file_path, 'rb') as file:
+        s3.upload_fileobj(file, bucket_name, key)
+
+    logging.info(f"Upload success: {key}")
 
 def run_build(app_name: str, source: str) -> str:
     download_files = downloader.download_required(source)
@@ -19,7 +32,7 @@ def run_build(app_name: str, source: str) -> str:
         input_apk_filepath = downloader.download_apkpure(app_name)
     exclude_patches = []
     include_patches = []
-    
+
     patches_path = f'./patches/{app_name}-{source}.txt'
     if os.path.exists(patches_path):
         with open(patches_path, 'r') as patches_file:
@@ -46,9 +59,9 @@ def run_build(app_name: str, source: str) -> str:
 
     _, stderr = libs_process.communicate()
     libs_return_code = libs_process.returncode
-        
+
     output_apk_filepath = f"{app_name}-patch-v{downloader.version}.apk"
-    
+
     patch_process = subprocess.Popen(
         [
             "java",
@@ -79,15 +92,15 @@ def run_build(app_name: str, source: str) -> str:
         sys.exit(1)
 
     os.remove(input_apk_filepath)
-    
+
     source_path = f'./sources/{source}.json'
     with open(source_path, 'r') as json_file:
         info = json.load(json_file)
 
     name = info[0].get("name", "")
-        
+
     signed_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
-    
+
     signing_process = subprocess.Popen(
         [
             max(glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')), key=os.path.getctime),
@@ -112,9 +125,17 @@ def run_build(app_name: str, source: str) -> str:
     if signing_return_code != 0:
         logging.error("An error occurred while signing the APK")
         sys.exit(1)
-    
+
     os.remove(output_apk_filepath)
-    release.create_github_release(app_name, source, download_files, signed_apk_filepath)
+    # release.create_github_release(app_name, source, download_files, signed_apk_filepath)
+
+    endpoint_url = os.getenv('ENDPOINT_URL')
+    access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+    secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+    bucket_name = os.getenv('BUCKET_NAME')
+    key = f"{app_name}/{signed_apk_filepath}"
+
+    upload_to_r2(signed_apk_filepath, bucket_name, key, endpoint_url, access_key_id, secret_access_key)
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
