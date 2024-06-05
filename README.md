@@ -9,10 +9,9 @@
 **Download link below is R2. It's fast. Click YouTube Revanced or YouTube Music Revanced to download**
 
 ### Download
-**Available at this repository**
- - [YouTube Revanced](https://pub-7889a234d4144827bef17198ae0e21ce.r2.dev/youtube%2Fyoutube-revanced-v19.16.39.apk)
- - [YouTube Music Revanced](https://pub-7889a234d4144827bef17198ae0e21ce.r2.dev/youtube-music%2Fyoutube-music-revanced-v7.03.52.apk)
+  - Download page: https://revanced-nonroot.timie.workers.dev/
  - [Revanced GmsCore](https://github.com/revanced/gmscore/releases/latest)
+ - **Double click** on **folder** and **...** to **Download**
  - Delete .zip downloaded file
    > You can fork and add more sources and apps
 
