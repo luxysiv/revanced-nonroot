@@ -1,0 +1,20 @@
+[
+    {
+        "name": "revanced-anddea"
+    },
+    {
+        "user": "inotia00",
+        "repo": "revanced-cli",
+        "tag": "latest"
+    },
+    {
+        "user": "anddea",
+        "repo": "revanced-patches",
+        "tag": "latest"
+    },
+    {
+        "user": "anddea",
+        "repo": "revanced-integrations",
+        "tag": "latest"
+    }
+]
