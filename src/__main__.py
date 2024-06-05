@@ -117,7 +117,7 @@ def run_build(app_name: str, source: str) -> str:
     # release.create_github_release(app_name, source, download_files, signed_apk_filepath)
     
     key = f"{app_name}/{signed_apk_filepath}"
-    r2.upload(signed_apk_filepath, bucket_name, key, endpoint_url, access_key_id, secret_access_key)
+    r2.upload(signed_apk_filepath, key)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
