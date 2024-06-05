@@ -1,6 +1,6 @@
 {
     "org": "tiktok-pte-ltd",
-    "name": "tik-tok-including-musical-ly",
+    "name": "com.zhiliaoapp.musically",
     "type": "APK", 
     "arch": "arm64-v8a + armeabi-v7a",
     "dpi": "nodpi",
