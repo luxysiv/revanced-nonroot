@@ -4,24 +4,11 @@ import json
 import glob
 import logging
 import subprocess
-import boto3
-from botocore.client import Config
 from src import (
+    r2,
     release,
     downloader
 )
-
-def upload_to_r2(file_path, bucket_name, key, endpoint_url, access_key_id, secret_access_key):
-    s3 = boto3.client('s3',
-                      endpoint_url=endpoint_url,
-                      aws_access_key_id=access_key_id,
-                      aws_secret_access_key=secret_access_key,
-                      config=Config(signature_version='s3v4'))
-
-    with open(file_path, 'rb') as file:
-        s3.upload_fileobj(file, bucket_name, key)
-
-    logging.info(f"Upload success: {key}")
 
 def run_build(app_name: str, source: str) -> str:
     download_files = downloader.download_required(source)
@@ -128,16 +115,12 @@ def run_build(app_name: str, source: str) -> str:
 
     os.remove(output_apk_filepath)
     # release.create_github_release(app_name, source, download_files, signed_apk_filepath)
-
-    endpoint_url = os.getenv('ENDPOINT_URL')
-    access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-    secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-    bucket_name = os.getenv('BUCKET_NAME')
+    
     key = f"{app_name}/{signed_apk_filepath}"
-
-    upload_to_r2(signed_apk_filepath, bucket_name, key, endpoint_url, access_key_id, secret_access_key)
+    r2.upload(signed_apk_filepath, bucket_name, key, endpoint_url, access_key_id, secret_access_key)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     app_name = os.getenv("APP_NAME")
     source = os.getenv("SOURCE")
 
