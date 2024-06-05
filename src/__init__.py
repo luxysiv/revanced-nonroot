@@ -17,3 +17,7 @@ version = {}
 
 github_token = os.getenv('GITHUB_TOKEN')
 repository = os.getenv('GITHUB_REPOSITORY')
+endpoint_url = os.getenv('ENDPOINT_URL')
+access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+bucket_name = os.getenv('BUCKET_NAME')
