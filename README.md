@@ -4,9 +4,9 @@
 
 **Script auto change APK's source if download APK failure.**
 
-**Upload file to R2 Cloudflare**
+**Files upload to R2 Cloudflare**
 
-**Download link below is R2. It's fast. Click YouTube Revanced or YouTube Music Revanced to download**
+**Download link below is R2. It's fast.**
 
 ### Download
   - Download page: https://revanced-nonroot.timie.workers.dev/
