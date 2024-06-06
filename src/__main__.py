@@ -120,7 +120,6 @@ def run_build(app_name: str, source: str) -> str:
     r2.upload(signed_apk_filepath, key)
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     app_name = os.getenv("APP_NAME")
     source = os.getenv("SOURCE")
 
