@@ -38,12 +38,13 @@ def download_required(source: str) -> dict:
         repos_info = json.load(json_file)
 
     for repo_info in repos_info:
+        
         if "name" in repo_info:
             continue
 
-        user = repo_info.get('user', "")
-        repo = repo_info.get('repo', "")
-        tag = repo_info.get('tag', "")
+        user = repo_info['user']
+        repo = repo_info['repo']
+        tag = repo_info['tag']
 
         url = detect_github_link(base_url, user, repo, tag)
         response = scraper.get(url)
@@ -112,6 +113,14 @@ def download_apkmirror(app_name: str) -> str:
             config = json.load(json_file)
 
         version = config['version']
+        type = config['type']
+
+        if type == 'BUNDLE':
+            ext = 'apkm'
+        elif type == 'APK':
+            ext = 'apk'
+        else:
+            ext = 'apk'
 
         if not version:
             version = get_supported_version(config['package'])
