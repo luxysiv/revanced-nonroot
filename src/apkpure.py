@@ -33,7 +33,7 @@ def get_download_link(version: str, app_name: str) ->str:
     response.raise_for_status()
     soup = BeautifulSoup(response.content, "html.parser")
     download_link = soup.find(
-        'a', href=lambda href: href and '/APK/{config['package']}' in href
+        'a', href=lambda href: href and f'/APK/{config['package']}' in href
     )
     if download_link:
         return download_link['href']
