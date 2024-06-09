@@ -49,6 +49,8 @@ def download_required(source: str) -> dict:
 
         url = detect_github_link(base_url, user, repo, tag)
         response = scraper.get(url)
+        content_size = len(response.content)
+        logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
         assets = response.json().get("assets", [])
 
         for asset in assets:
@@ -63,6 +65,8 @@ def detect_github_link(base_url: str, user: str, repo: str, tag: str) -> str:
     if tag in ["", "dev", "prerelease"]:
         url = f"https://api.github.com/repos/{user}/{repo}/releases"
         response = scraper.get(url)
+        content_size = len(response.content)
+        logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
         releases = response.json()
 
         if tag == "":
