@@ -1,11 +1,29 @@
 import json
+import logging 
 
 from src import scraper 
 from bs4 import BeautifulSoup
 
-def get_download_link(version: str, app_name: str) ->str:
+def get_latest_version(app_name: str) -> str:
+    conf_file_path = f'./apps/uptodown/{app_name}.json'
+    with open(conf_file_path, 'r') as json_file:
+        config = json.load(json_file)
+
+    url = f"https://{config['name']}.en.uptodown.com/android/versions"
+
+    response = scraper.get(url)
+    response.raise_for_status()
+    content_size = len(response.content)
+    logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
+    soup = BeautifulSoup(response.content, "html.parser")
+    version_spans = soup.select('#versions-items-list .version')
+    versions = [span.text for span in version_spans]
+    highest_version = max(versions)
     
-    conf_file_path = f'./apps/uptodown/{app_name}.json'   
+    return highest_version
+
+def get_download_link(version: str, app_name: str) -> str:
+    conf_file_path = f'./apps/uptodown/{app_name}.json'
     with open(conf_file_path, 'r') as json_file:
         config = json.load(json_file)
   
@@ -13,8 +31,9 @@ def get_download_link(version: str, app_name: str) ->str:
 
     response = scraper.get(url)
     response.raise_for_status()
+    content_size = len(response.content)
+    logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
     soup = BeautifulSoup(response.content, "html.parser")
-
     divs = soup.find_all("div", {"data-url": True})
 
     for div in divs:
@@ -24,6 +43,9 @@ def get_download_link(version: str, app_name: str) ->str:
             dl_url = dl_page.replace('/download/', '/post-download/')
             response = scraper.get(dl_url)
             response.raise_for_status()
+            content_size = len(response.content)
+            logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
+    
             soup = BeautifulSoup(response.content, "html.parser")
             post_download_divs = soup.find_all("div", class_="post-download")
             for post_div in post_download_divs:
@@ -33,22 +55,3 @@ def get_download_link(version: str, app_name: str) ->str:
                     return full_url
 
     return None
-
-def get_latest_version(app_name: str) -> str:
-    
-    conf_file_path = f'./apps/uptodown/{app_name}.json'   
-    with open(conf_file_path, 'r') as json_file:
-        config = json.load(json_file)
-    
-    url = f"https://{config['name']}.en.uptodown.com/android/versions"
-    
-    response = scraper.get(url)
-    response.raise_for_status()
-    
-    soup = BeautifulSoup(response.content, "html.parser")
-    
-    version_spans = soup.select('#versions-items-list .version')
-    versions = [span.text for span in version_spans]
-    highest_version = max(versions)
-    
-    return highest_version
