@@ -95,11 +95,7 @@
 ```python
     release.create_github_release(app_name, source, download_files, signed_apk_filepath)
 
-    endpoint_url = os.getenv('ENDPOINT_URL')
-    access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-    secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-    bucket_name = os.getenv('BUCKET_NAME')
-    key = f"{app_name}/{signed_apk_filepath}"
+    # key = f"{app_name}/{signed_apk_filepath}"
 
     # upload_to_r2(signed_apk_filepath, bucket_name, key, endpoint_url, access_key_id, secret_access_key)
 ```
