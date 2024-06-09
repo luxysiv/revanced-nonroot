@@ -1,4 +1,5 @@
 import json
+import logging 
 
 from src import scraper 
 from bs4 import BeautifulSoup
@@ -12,6 +13,8 @@ def get_latest_version(app_name: str) -> str:
 
     response = scraper.get(url)
     response.raise_for_status()
+    content_size = len(response.content)
+    logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
     soup = BeautifulSoup(response.content, "html.parser")
     version_info = soup.find('div', class_='ver-top-down')
 
@@ -31,11 +34,15 @@ def get_download_link(version: str, app_name: str) ->str:
 
     response = scraper.get(url)
     response.raise_for_status()
+    content_size = len(response.content)
+    logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
     soup = BeautifulSoup(response.content, "html.parser")
-    download_btn = soup.find('a', class_='download-btn')
-    download_link = download_btn['href'] if (download_btn and "/APK/" in download_btn.get('href', '')) else None
-    
+    download_link = soup.find(
+        'a', href=lambda href: href and f'/APK/{config['package']}' in href
+    )
     if download_link:
-        return download_link
+        return download_link['href']
+    
+    return None
         
     return None
