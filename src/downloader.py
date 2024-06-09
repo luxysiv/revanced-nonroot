@@ -15,7 +15,6 @@ def download_resource(url: str, name: str) -> str:
     with scraper.get(url, stream=True) as res:
         res.raise_for_status()
 
-        final_url = res.url
         total_size = int(res.headers.get('content-length', 0))
         downloaded_size = 0
 
@@ -25,11 +24,10 @@ def download_resource(url: str, name: str) -> str:
                 downloaded_size += len(chunk)
 
         logging.info(
-            f"URL:{final_url} [{downloaded_size}/{total_size}] -> \"{name}\" [1]"
+            f"URL: {url} [{downloaded_size}/{total_size}] -> {name}"
         )
 
     return filepath
-
 
 def download_required(source: str) -> dict:
     downloaded_files = {}
