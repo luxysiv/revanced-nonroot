@@ -1,2 +1,2 @@
-- Custom branding name YouTube succeeded
-- Custom branding icon YouTube succeeded
+- Custom branding name YouTube
+- Custom branding icon YouTube
