@@ -44,5 +44,3 @@ def get_download_link(version: str, app_name: str) ->str:
         return download_link['href']
     
     return None
-        
-    return None
