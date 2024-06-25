@@ -16,6 +16,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Python
+        uses: actions/setup-python@main
+        with:
+          python-version: 3.11
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
       - name: Read Matrix Config
         id: read-matrix
         uses: actions/github-script@main
@@ -45,14 +53,6 @@ jobs:
         uses: actions/checkout@main
         with:
           fetch-depth: 0
-
-      - name: Install Python
-        uses: actions/setup-python@main
-        with:
-          python-version: 3.11
-
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
 
       - name: Patch Application 
         env:
