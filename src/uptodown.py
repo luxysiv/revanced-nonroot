@@ -39,19 +39,17 @@ def get_download_link(version: str, app_name: str) -> str:
     for div in divs:
         version_span = div.find("span", class_="version")
         if version_span and version_span.text == version:
-            dl_page = div["data-url"]
-            dl_url = dl_page.replace('/download/', '/post-download/')
+            dl_url = div["data-url"]
             response = scraper.get(dl_url)
             response.raise_for_status()
             content_size = len(response.content)
             logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
     
             soup = BeautifulSoup(response.content, "html.parser")
-            post_download_divs = soup.find_all("div", class_="post-download")
-            for post_div in post_download_divs:
-                data_url = post_div.get("data-url")
-                if data_url:
-                    full_url = "https://dw.uptodown.com/dwn/" + data_url
-                    return full_url
+            button = soup.find('button', id='detail-download-button')
+            data_url = button.get('data-url')
+            if data_url:
+                full_url = "https://dw.uptodown.com/dwn/" + data_url
+                return full_url
 
     return None
