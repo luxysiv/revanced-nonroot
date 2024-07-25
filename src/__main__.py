@@ -4,6 +4,7 @@ import json
 import glob
 import logging
 import subprocess
+from sys import exit
 from src import (
     r2,
     release,
@@ -17,6 +18,8 @@ def run_build(app_name: str, source: str) -> str:
         input_apk_filepath = downloader.download_uptodown(app_name)
     if not input_apk_filepath:
         input_apk_filepath = downloader.download_apkpure(app_name)
+    if not input_apk_filepath:
+        exit(0)
     exclude_patches = []
     include_patches = []
 
