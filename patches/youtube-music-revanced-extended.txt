@@ -1,1 +1,2 @@
-- Custom branding icon YouTube Music
+- Custom branding name for YouTube Music
+- Custom branding icon for YouTube Music
