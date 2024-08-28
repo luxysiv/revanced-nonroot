@@ -1,1 +1,2 @@
-
+- Custom branding name for YouTube
+- Custom branding icon for YouTube
