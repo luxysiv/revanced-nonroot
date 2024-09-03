@@ -37,7 +37,7 @@ def get_download_link(version: str, app_name: str) ->str:
     content_size = len(response.content)
     logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
     soup = BeautifulSoup(response.content, "html.parser")
-    download_link = soup.find('a', class_='download-btn')
+    download_link = soup.find('a', id='download_link')
     if download_link:
         return download_link['href']
     
