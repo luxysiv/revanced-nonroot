@@ -92,7 +92,7 @@ def run_build(app_name: str, source: str) -> str:
 
     # release.create_github_release(app_name, source, download_files, output_apk_filepath)
     
-    key = f"{app_name}/{signed_apk_filepath}"
+    key = f"{app_name}/{output_apk_filepath}"
     r2.upload(output_apk_filepath, key)
 
 if __name__ == "__main__":
