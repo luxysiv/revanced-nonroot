@@ -1,3 +1,5 @@
 boto3
+selenium
 cloudscraper
 beautifulsoup4
+webdriver-manager
