@@ -54,9 +54,8 @@ def download_required(source: str) -> dict:
         assets = response.json().get("assets", [])
 
         for asset in assets:
-            if not asset["name"].endswith(".asc"):
-                filepath = download_resource(asset["browser_download_url"], asset["name"])
-                downloaded_files[repo_info['repo'].replace("/", "")] = filepath
+            filepath = download_resource(asset["browser_download_url"], asset["name"])
+            downloaded_files.setdefault(repo_info['repo'].replace("/", ""), []).append(filepath)
 
     return downloaded_files
 
