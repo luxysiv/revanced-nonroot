@@ -58,17 +58,17 @@ def run_build(app_name: str, source: str) -> str:
 
     output_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
 
-    revanced-cli = next(
+    revanced_cli = next(
         filter(
             lambda file: file.endswith('.jar'), download_files['revanced-cli']
         )
     )
-    revanced-patches = next(
+    revanced_patches = next(
         filter(
             lambda file: file.endswith('.jar'), download_files['revanced-patches']
         )
     )
-    revanced-integrations = next(
+    revanced_integrations = next(
         filter(
             lambda file: file.endswith('.apk'), download_files['revanced-integrations']
         )
@@ -78,14 +78,14 @@ def run_build(app_name: str, source: str) -> str:
         [
             "java",
             "-jar",
-            revanced-cli,
+            revanced_cli,
             "patch",
             "--patch-bundle",
-            revanced-patches,
+            revanced_patches,
             "--out",
             output_apk_filepath,
             "--merge",
-            revanced-integrations,
+            revanced_integrations,
             input_apk_filepath,
             *exclude_patches,
             *include_patches,
