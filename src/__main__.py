@@ -58,18 +58,34 @@ def run_build(app_name: str, source: str) -> str:
 
     output_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
 
+    revanced-cli = next(
+        filter(
+            lambda file: file.endswith('.jar'), download_files['revanced-cli']
+        )
+    )
+    revanced-patches = next(
+        filter(
+            lambda file: file.endswith('.jar'), download_files['revanced-patches']
+        )
+    )
+    revanced-integrations = next(
+        filter(
+            lambda file: file.endswith('.apk'), download_files['revanced-integrations']
+        )
+    )
+    
     patch_process = subprocess.Popen(
         [
             "java",
             "-jar",
-            download_files["revanced-cli"],
+            revanced-cli,
             "patch",
             "--patch-bundle",
-            download_files["revanced-patches"],
+            revanced-patches,
             "--out",
             output_apk_filepath,
             "--merge",
-            download_files["revanced-integrations"],
+            revanced-integrations,
             input_apk_filepath,
             *exclude_patches,
             *include_patches,
