@@ -42,12 +42,22 @@ def get_download_link(version: str, app_name: str) -> str:
         
         for entry in version_data:
             if entry["version"] == version:
-                version_page = scraper.get(f"{entry['versionURL']}-x")
+                version_url = entry["versionURL"]
+                version_page = scraper.get(version_url)
                 version_page.raise_for_status()
-                content_size = len(version_page.content)
-                logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
                 soup = BeautifulSoup(version_page.content, "html.parser")
-                download_url = soup.find('button', id='detail-download-button')['data-url']
+                
+                # Check for button type
+                button = soup.find('button', id='detail-download-button')
+                if "download-link-deeplink" in button['onclick']:
+                    # Update versionURL by adding '-x'
+                    version_url += '-x'
+                    version_page = scraper.get(version_url)
+                    version_page.raise_for_status()
+                    soup = BeautifulSoup(version_page.content, "html.parser")
+                    button = soup.find('button', id='detail-download-button')
+                
+                download_url = button['data-url']
                 return f"https://dw.uptodown.com/dwn/{download_url}"
         
         if all(entry["version"] < version for entry in version_data):
