@@ -26,13 +26,15 @@ def create_github_release(app_name, source, download_files, apk_file_path):
         info = json.load(json_file)
 
     name = info[0].get("name", "")
-
-    patch_file_path = download_files["revanced-patches"]
-    integrations_file_path = download_files["revanced-integrations"]
-    cli_file_path = download_files["revanced-cli"]
+    
+    find_file = lambda prefix, ext: next(
+        (file for file in download_files if file.startswith(prefix) and file.endswith(ext)),
+        None
+    )
+    cli_file_path = find_file('./revanced-cli', '.jar')
+    patch_file_path = find_file('./patches', '.rvp')
 
     patchver = extract_version(patch_file_path)
-    integrationsver = extract_version(integrations_file_path)
     cliver = extract_version(cli_file_path)
     tag_name = f"{name}-v{patchver}"
 
@@ -67,7 +69,6 @@ def create_github_release(app_name, source, download_files, apk_file_path):
 
 ## Build Tools:
 - **ReVanced Patches:** v{patchver}
-- **ReVanced Integrations:** v{integrationsver}
 - **ReVanced CLI:** v{cliver}
 
 ## Note:

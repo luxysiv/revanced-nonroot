@@ -13,13 +13,29 @@ from src import (
 
 def run_build(app_name: str, source: str) -> str:
     download_files = downloader.download_required(source)
-    input_apk_filepath = downloader.download_apkmirror(app_name)
-    if not input_apk_filepath:
-        input_apk_filepath = downloader.download_uptodown(app_name)
-    if not input_apk_filepath:
-        input_apk_filepath = downloader.download_apkpure(app_name)
+    find_file = lambda prefix, ext: next(
+        (file for file in download_files if file.startswith(prefix) and file.endswith(ext)),
+        None
+       )
+
+    revanced_cli = find_file('./revanced-cli', '.jar')
+    revanced_patches = find_file('./patches', '.rvp')
+    
+    download_methods = [
+        downloader.download_apkmirror,
+        downloader.download_uptodown,
+        downloader.download_apkpure
+    ]
+
+    input_apk_filepath = None
+    for method in download_methods:
+        input_apk_filepath = method(app_name, revanced_cli, revanced_patches)
+        if input_apk_filepath:
+            break
+
     if not input_apk_filepath:
         exit(0)
+        
     exclude_patches = []
     include_patches = []
 
@@ -29,10 +45,10 @@ def run_build(app_name: str, source: str) -> str:
             for line in patches_file:
                 line = line.strip()
                 if line.startswith('-'):
-                    exclude_patches.append("--exclude")
+                    exclude_patches.append("-d")
                     exclude_patches.append(line[1:].strip())
                 elif line.startswith('+'):
-                    include_patches.append("--include")
+                    include_patches.append("-e")
                     include_patches.append(line[1:].strip())
 
     libs_process = subprocess.Popen(
@@ -57,22 +73,6 @@ def run_build(app_name: str, source: str) -> str:
     name = info[0].get("name", "")
 
     output_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
-
-    revanced_cli = next(
-        filter(
-            lambda file: file.endswith('.jar'), download_files['revanced-cli']
-        )
-    )
-    revanced_patches = next(
-        filter(
-            lambda file: file.endswith('.jar'), download_files['revanced-patches']
-        )
-    )
-    revanced_integrations = next(
-        filter(
-            lambda file: file.endswith('.apk'), download_files['revanced-integrations']
-        )
-    )
     
     patch_process = subprocess.Popen(
         [
@@ -80,12 +80,10 @@ def run_build(app_name: str, source: str) -> str:
             "-jar",
             revanced_cli,
             "patch",
-            "--patch-bundle",
+            "--patches",
             revanced_patches,
             "--out",
             output_apk_filepath,
-            "--merge",
-            revanced_integrations,
             input_apk_filepath,
             *exclude_patches,
             *include_patches,

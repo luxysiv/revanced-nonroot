@@ -1,5 +1,6 @@
 import json
 import logging
+import subprocess
 
 from src import (
     apkpure, 
@@ -30,8 +31,8 @@ def download_resource(url: str, name: str) -> str:
         
     return filepath
 
-def download_required(source: str) -> dict:
-    downloaded_files = {}
+def download_required(source: str) -> list:
+    downloaded_files = []
     base_url = "https://api.github.com/repos/{}/{}/releases/{}"
 
     source_path = f'./sources/{source}.json'
@@ -39,7 +40,6 @@ def download_required(source: str) -> dict:
         repos_info = json.load(json_file)
 
     for repo_info in repos_info:
-        
         if "name" in repo_info:
             continue
 
@@ -55,7 +55,7 @@ def download_required(source: str) -> dict:
 
         for asset in assets:
             filepath = download_resource(asset["browser_download_url"], asset["name"])
-            downloaded_files.setdefault(repo_info['repo'].replace("/", ""), []).append(filepath)
+            downloaded_files.append(filepath)
 
     return downloaded_files
 
@@ -82,34 +82,43 @@ def detect_github_link(base_url: str, user: str, repo: str, tag: str) -> str:
     else:
         return base_url.format(user, repo, tag)
 
+def normalize_version(version):
+    return list(map(int, version.split('.')))
 
-def get_supported_version(package_name):
-    with open("./patches.json", "r") as patches_file:
-        patches = json.load(patches_file)
-    versions = set()
-    for patch in patches:
-        compatible_packages = patch.get("compatiblePackages")
-        if compatible_packages and isinstance(compatible_packages, list):
-            for package in compatible_packages:
-                if (
-                    package.get("name") == package_name and
-                    package.get("versions") is not None and
-                    isinstance(package["versions"], list) and
-                    package["versions"]
-                ):
-                    versions.update(
-                        map(
-                            str.strip, package["versions"]
-                        )
-                    )
-    if versions:
-        return sorted(versions, reverse=True)[0]
-    return None
+def get_highest_version(versions):
+    if not versions:
+        return None
+    
+    highest_version = versions[0]
+    for version in versions[1:]:
+        if normalize_version(version) > normalize_version(highest_version):
+            highest_version = version
 
+    return highest_version
 
-def download_apkmirror(app_name: str) -> str:
+def get_supported_version(package_name, cli, patches):
+    output = subprocess.check_output([
+        'java', '-jar', cli, 
+        'list-versions',
+        '-f', f'{package_name}',
+        patches
+    ])
+    output = output.decode('utf-8')
+
+    versions = [
+        line.split(' ')[0].strip()
+        for line in output.splitlines()[2:]
+        if 'Any' not in line and line.split(' ')[0].strip()
+    ]
+    
+    if not versions:
+        return None
+
+    highest_version = get_highest_version(versions)
+    return highest_version
+
+def download_apkmirror(app_name: str, cli: str, patches: str) -> str:
     global version
-
     try:
         conf_file_path = f'./apps/apkmirror/{app_name}.json'
 
@@ -127,7 +136,7 @@ def download_apkmirror(app_name: str) -> str:
             ext = 'apk'
 
         if not version:
-            version = get_supported_version(config['package'])
+            version = get_supported_version(config['package'], cli, patches)
 
         if not version:
             version = apkmirror.get_latest_version(app_name)
@@ -142,9 +151,8 @@ def download_apkmirror(app_name: str) -> str:
         return None
 
 
-def download_apkpure(app_name: str) -> str:
+def download_apkpure(app_name: str, cli: str, patches: str) -> str:
     global version
-
     try:
         conf_file_path = f'./apps/apkpure/{app_name}.json'
 
@@ -154,7 +162,7 @@ def download_apkpure(app_name: str) -> str:
         version = config['version']
 
         if not version:
-            version = get_supported_version(config['package'])
+            version = get_supported_version(config['package'], cli, patches)
 
         if not version:
             version = apkpure.get_latest_version(app_name)
@@ -167,9 +175,8 @@ def download_apkpure(app_name: str) -> str:
         return None
 
 
-def download_uptodown(app_name: str) -> str:
+def download_uptodown(app_name: str, cli: str, patches: str) -> str:
     global version
-
     try:
         conf_file_path = f'./apps/uptodown/{app_name}.json'
 
@@ -179,7 +186,7 @@ def download_uptodown(app_name: str) -> str:
         version = config['version']
 
         if not version:
-            version = get_supported_version(config['package'])
+            version = get_supported_version(config['package'], cli, patches)
 
         if not version:
             version = uptodown.get_latest_version(app_name)
