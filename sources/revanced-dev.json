@@ -11,10 +11,5 @@
         "user": "revanced",
         "repo": "revanced-patches",
         "tag": "dev"
-    },
-    {
-        "user": "revanced",
-        "repo": "revanced-integrations",
-        "tag": "dev"
     }
 ]
