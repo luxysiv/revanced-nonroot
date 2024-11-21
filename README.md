@@ -2,6 +2,8 @@
 
 **Now, this repository can build more sources and apps.**
 
+**Notice: Because new Revanced patches, repository only build Revanced apps**
+
 **Script auto change APK's source if download APK failure.**
 
 **Files upload to R2 Cloudflare**
