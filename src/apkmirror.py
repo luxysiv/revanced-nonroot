@@ -1,19 +1,18 @@
 import re
 import json
-import logging 
-
+import logging
 from bs4 import BeautifulSoup
 from src import base_url, scraper
 
-def get_download_page(version: str, app_name: str) -> str:
-    
-    conf_file_path = f'./apps/apkmirror/{app_name}.json'   
+def get_download_link(version: str, app_name: str) -> str:
+    conf_file_path = f'./apps/apkmirror/{app_name}.json'
     with open(conf_file_path, 'r') as json_file:
         config = json.load(json_file)
-
+    
     criteria = [config['type'], config['arch'], config['dpi']]
     url = (f"{base_url}/apk/{config['org']}/{config['name']}/"
            f"{config['name']}-{version.replace('.', '-')}-release/")
+    
     response = scraper.get(url)
     response.raise_for_status()
     content_size = len(response.content)
@@ -21,16 +20,19 @@ def get_download_page(version: str, app_name: str) -> str:
     soup = BeautifulSoup(response.content, "html.parser")
 
     rows = soup.find_all('div', class_='table-row headerFont')
+    download_page_url = None
     for row in rows:
         row_text = row.get_text()
         if all(criterion in row_text for criterion in criteria):
             sub_url = row.find('a', class_='accent_color')
             if sub_url:
-                return base_url + sub_url['href']
-    return None
+                download_page_url = base_url + sub_url['href']
+                break
 
-def extract_download_link(page: str) -> str:
-    response = scraper.get(page)
+    if not download_page_url:
+        return None
+
+    response = scraper.get(download_page_url)
     response.raise_for_status()
     content_size = len(response.content)
     logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
@@ -38,8 +40,8 @@ def extract_download_link(page: str) -> str:
 
     sub_url = soup.find('a', class_='downloadButton')
     if sub_url:
-        download_page_url = base_url + sub_url['href']
-        response = scraper.get(download_page_url)
+        final_download_page_url = base_url + sub_url['href']
+        response = scraper.get(final_download_page_url)
         response.raise_for_status()
         content_size = len(response.content)
         logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
@@ -50,6 +52,7 @@ def extract_download_link(page: str) -> str:
             return base_url + button['href']
 
     return None
+    
 
 def get_latest_version(app_name: str) -> str:
     
