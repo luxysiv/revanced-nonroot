@@ -1,5 +1,6 @@
 name: Patch Revanced
 on:
+  push:
   workflow_dispatch:
 
 jobs:
@@ -67,3 +68,45 @@ jobs:
           APP_NAME: ${{ matrix.app_name }}
           SOURCE: ${{ matrix.source }}
         run: python -m src
+
+  cleanup:
+    name: Cleanup Workflow Runs
+    needs: matrix-patch
+    runs-on: ubuntu-latest
+    if: ${{ success() }}
+    steps:
+      - name: Cleanup Previous Workflow Runs
+        uses: actions/github-script@main
+        with:
+          script: |
+            const allRuns = [];
+            let page = 1;
+
+            while (true) {
+              const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: "patch.yml", // Thay bằng tên file workflow
+                per_page: 2,
+                page,
+              });
+
+              if (runs.workflow_runs.length === 0) break; // Dừng nếu không còn kết quả
+              allRuns.push(...runs.workflow_runs);
+              page++;
+            }
+
+            console.log(`Found ${allRuns.length} workflow runs.`);
+
+            for (const run of allRuns) {
+              if (run.id !== context.runId) { // Chỉ giữ lại run hiện tại
+                console.log(`Deleting workflow run ID: ${run.id}`);
+                await github.rest.actions.deleteWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id,
+                });
+              }
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
