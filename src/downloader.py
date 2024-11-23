@@ -126,22 +126,40 @@ def get_supported_version(package_name, cli, patches):
 
 def download_platform(app_name: str, platform: str, cli: str, patches: str) -> str:
     global version
-    config_path = Path(f'./apps/{platform}/{app_name}.json')
+    try:
+        config_path = Path(f'./apps/{platform}/{app_name}.json')
+        
+        # Check if config file exists
+        if not config_path.exists():
+            raise FileNotFoundError(f"Config file not found: {config_path}")
 
-    with config_path.open() as json_file:
-        config = json.load(json_file)
+        with config_path.open() as json_file:
+            config = json.load(json_file)
 
-    version = config.get('version')
-    if not version:
-        version = get_supported_version(config['package'], cli, patches)
+        version = config.get('version')
+        if not version:
+            version = get_supported_version(config['package'], cli, patches)
 
-    platform_module = globals()[platform]
-    if not version:
-        version = platform_module.get_latest_version(app_name)
+        platform_module = globals()[platform]
+        if not version:
+            version = platform_module.get_latest_version(app_name)
 
-    download_link = platform_module.get_download_link(version, app_name)
-    filename = f"{app_name}-v{version}.apk"
-    return download_resource(download_link, filename)
+        download_link = platform_module.get_download_link(version, app_name)
+        filename = f"{app_name}-v{version}.apk"
+        return download_resource(download_link, filename)
+
+    except FileNotFoundError as e:
+        logging.error(f"Error: {e}")
+        return "Error: Config file not found."
+    except KeyError as e:
+        logging.error(f"Error: Missing key in configuration file - {e}")
+        return "Error: Missing key in configuration."
+    except json.JSONDecodeError as e:
+        logging.error(f"Error: Failed to parse JSON - {e}")
+        return "Error: Invalid JSON format."
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return f"Error: {e}"
     
 
 def download_apkmirror(app_name: str, cli: str, patches: str) -> str:
