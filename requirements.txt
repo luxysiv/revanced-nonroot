@@ -1,3 +1,4 @@
 boto3
 cloudscraper
 beautifulsoup4
+python-telegram-bot
