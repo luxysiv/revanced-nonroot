@@ -15,8 +15,6 @@ logging.basicConfig(
 # Global version
 version = {}
 
-chat_id = os.getenv('CHAT_ID')
-bot_token = os.getenv('BOT_TOKEN')
 github_token = os.getenv('GITHUB_TOKEN')
 repository = os.getenv('GITHUB_REPOSITORY')
 endpoint_url = os.getenv('ENDPOINT_URL')
