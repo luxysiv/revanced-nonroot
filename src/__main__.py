@@ -4,21 +4,19 @@ import json
 import glob
 import logging
 import subprocess
-import asyncio
 from sys import exit
 from src import (
     r2,
     release,
-    telegram,
     downloader
 )
 
-async def run_build(app_name: str, source: str) -> str:
+def run_build(app_name: str, source: str) -> str:
     download_files = downloader.download_required(source)
     find_file = lambda prefix, ext: next(
         (file for file in download_files if file.startswith(prefix) and file.endswith(ext)),
         None
-    )
+       )
 
     revanced_cli = find_file('./revanced-cli', '.jar')
     revanced_patches = find_file('./patches', '.rvp')
@@ -61,8 +59,8 @@ async def run_build(app_name: str, source: str) -> str:
             "lib/x86/*",
             "lib/x86_64/*",
         ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE
+        stdout=subprocess.DEVNULL,  
+        stderr=subprocess.PIPE     
     )
 
     _, stderr = libs_process.communicate()
@@ -105,12 +103,11 @@ async def run_build(app_name: str, source: str) -> str:
 
     os.remove(input_apk_filepath)
 
+
     # release.create_github_release(app_name, source, download_files, output_apk_filepath)
     
     key = f"{app_name}/{output_apk_filepath}"
     r2.upload(output_apk_filepath, key)
-    
-    await telegram.upload_file_to_telegram(output_apk_filepath)
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
@@ -120,4 +117,4 @@ if __name__ == "__main__":
         logging.error("APP_NAME and SOURCE environment variables must be set")
         sys.exit(1)
 
-    asyncio.run(run_build(app_name, source))
+    run_build(app_name, source)
