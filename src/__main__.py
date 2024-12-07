@@ -8,6 +8,7 @@ from sys import exit
 from src import (
     r2,
     release,
+    telegram,
     downloader
 )
 
@@ -108,6 +109,8 @@ def run_build(app_name: str, source: str) -> str:
     
     key = f"{app_name}/{output_apk_filepath}"
     r2.upload(output_apk_filepath, key)
+    
+    telegram.upload_file_to_telegram(output_apk_filepath)
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
