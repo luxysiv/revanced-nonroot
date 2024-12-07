@@ -1,7 +1,11 @@
 from telegram import Bot
 import logging
+from src import (
+    chat_id,
+    bot_token
+)
 
-def upload_file_to_telegram(bot_token, chat_id, file_path):
+def upload_file_to_telegram(file_path):
     try:
         bot = Bot(token=bot_token)
         with open(file_path, 'rb') as file:
