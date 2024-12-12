@@ -148,18 +148,9 @@ def download_platform(app_name: str, platform: str, cli: str, patches: str) -> s
         filename = f"{app_name}-v{version}.apk"
         return download_resource(download_link, filename)
 
-    except FileNotFoundError as e:
-        logging.error(f"Error: {e}")
-        return "Error: Config file not found."
-    except KeyError as e:
-        logging.error(f"Error: Missing key in configuration file - {e}")
-        return "Error: Missing key in configuration."
-    except json.JSONDecodeError as e:
-        logging.error(f"Error: Failed to parse JSON - {e}")
-        return "Error: Invalid JSON format."
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
-        return f"Error: {e}"
+        return None
     
 
 def download_apkmirror(app_name: str, cli: str, patches: str) -> str:
