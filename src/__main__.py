@@ -21,18 +21,11 @@ def run_build(app_name: str, source: str) -> str:
     revanced_cli = find_file('./revanced-cli', '.jar')
     revanced_patches = find_file('./patches', '.rvp')
     
-    download_methods = [
-        downloader.download_apkmirror,
-        downloader.download_uptodown,
-        downloader.download_apkpure
-    ]
-
-    input_apk_filepath = None
-    for method in download_methods:
-        input_apk_filepath = method(app_name, revanced_cli, revanced_patches)
-        if input_apk_filepath:
-            break
-
+    input_apk_filepath = downloader.download_apkmirror(app_name)
+    if not input_apk_filepath:
+        input_apk_filepath = downloader.download_uptodown(app_name)
+    if not input_apk_filepath:
+        input_apk_filepath = downloader.download_apkpure(app_name)
     if not input_apk_filepath:
         exit(0)
         
