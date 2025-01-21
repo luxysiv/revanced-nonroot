@@ -4,35 +4,28 @@ import urllib.request
 import hmac
 import hashlib
 from datetime import datetime, timezone, timedelta
-from base64 import b64encode
-from email.utils import formatdate
-from urllib.parse import urljoin
 from xml.etree import ElementTree as ET
 
-# Import thông tin cấu hình từ module src
 from src import (
-    bucket_name, 
-    endpoint_url, 
-    access_key_id, 
-    secret_access_key
+    bucket_name,
+    endpoint_url,
+    access_key_id,
+    secret_access_key,
 )
 
 logging.basicConfig(level=logging.DEBUG)
 
-# Hàm ký yêu cầu AWS S3
 def sign_request(method, url, headers, payload_hash=""):
     canonical_uri = url.split(endpoint_url.rstrip('/'))[-1]
     canonical_headers = ''.join(f"{k.lower()}:{v.strip()}\n" for k, v in sorted(headers.items()))
     signed_headers = ';'.join(k.lower() for k in sorted(headers.keys()))
     payload_hash = payload_hash or hashlib.sha256(b"").hexdigest()
 
-    # Tạo canonical request
     canonical_request = (
         f"{method}\n{canonical_uri}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
     )
     logging.debug(f"CanonicalRequest:\n{canonical_request}")
 
-    # Tạo StringToSign
     date = headers['x-amz-date'][:8]
     string_to_sign = (
         f"AWS4-HMAC-SHA256\n{headers['x-amz-date']}\n"
@@ -40,7 +33,6 @@ def sign_request(method, url, headers, payload_hash=""):
     )
     logging.debug(f"StringToSign:\n{string_to_sign}")
 
-    # Tạo chữ ký
     date_key = hmac.new(('AWS4' + secret_access_key).encode(), date.encode(), hashlib.sha256).digest()
     region_key = hmac.new(date_key, b'us-east-1', hashlib.sha256).digest()
     service_key = hmac.new(region_key, b's3', hashlib.sha256).digest()
@@ -53,14 +45,12 @@ def sign_request(method, url, headers, payload_hash=""):
     )
     logging.debug(f"Signature:\n{signature}")
 
-# Tạo URL chính xác
 def build_url(bucket, key=None):
     base_url = endpoint_url.rstrip('/')
     if key:
         return f"{base_url}/{bucket}/{key.lstrip('/')}"
     return f"{base_url}/{bucket}"
 
-# Liệt kê các tệp
 def list_objects(prefix):
     url = build_url(bucket_name, f"?prefix={prefix}")
     headers = {
@@ -72,7 +62,6 @@ def list_objects(prefix):
     with urllib.request.urlopen(request) as response:
         return response.read().decode()
 
-# Xóa tệp
 def delete_object(key):
     url = build_url(bucket_name, key)
     headers = {
@@ -84,7 +73,6 @@ def delete_object(key):
     with urllib.request.urlopen(request) as response:
         return response.status
 
-# Tải lên tệp
 def upload_file(file_path, key):
     url = build_url(bucket_name, key)
     with open(file_path, 'rb') as file:
@@ -94,7 +82,8 @@ def upload_file(file_path, key):
         "Host": endpoint_url.split("//")[1],
         "x-amz-date": datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'),
         "x-amz-content-sha256": payload_hash,
-        "Content-Type": "application/octet-stream"
+        "Content-Type": "application/octet-stream",
+        "Content-Length": str(len(file_data)),  # Fix lỗi 411
     }
     sign_request("PUT", url, headers, payload_hash)
     with open(file_path, 'rb') as file:
@@ -102,7 +91,6 @@ def upload_file(file_path, key):
         with urllib.request.urlopen(request) as response:
             return response.status
 
-# Hàm xóa các tệp cũ
 def delete_old_files(prefix, threshold_minutes=60):
     try:
         objects = list_objects(prefix)
@@ -117,15 +105,12 @@ def delete_old_files(prefix, threshold_minutes=60):
     except Exception as e:
         logging.error(f"Error deleting old files: {e}")
 
-# Hàm chính để tải tệp
 def upload(file_path, key, threshold_minutes=60):
     if not os.path.exists(file_path):
         logging.error(f"File not found: {file_path}")
         return
     try:
-        # Xóa các tệp cũ trong cùng thư mục
         delete_old_files(key.rsplit('/', 1)[0], threshold_minutes)
-        # Tải lên tệp
         status = upload_file(file_path, key)
         if status == 200:
             logging.info(f"Upload success: {key}")
