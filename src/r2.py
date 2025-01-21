@@ -7,7 +7,9 @@ from datetime import datetime, timezone, timedelta
 from base64 import b64encode
 from email.utils import formatdate
 from urllib.parse import urljoin
+from xml.etree import ElementTree as ET
 
+# Import thông tin cấu hình từ module src
 from src import (
     bucket_name, 
     endpoint_url, 
@@ -15,28 +17,55 @@ from src import (
     secret_access_key
 )
 
-# Hàm ký yêu cầu AWS S3
-def sign_request(method, url, headers):
-    canonical_headers = ''.join([f"{k.lower()}:{v}\n" for k, v in sorted(headers.items())])
-    signed_headers = ';'.join([k.lower() for k in sorted(headers.keys())])
-    payload_hash = hashlib.sha256(b"").hexdigest()
+logging.basicConfig(level=logging.DEBUG)
 
-    canonical_request = f"{method}\n{url}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
-    string_to_sign = f"AWS4-HMAC-SHA256\n{headers['x-amz-date']}\n{headers['x-amz-date'][:8]}/us-east-1/s3/aws4_request\n{hashlib.sha256(canonical_request.encode()).hexdigest()}"
-    date_key = hmac.new(('AWS4' + secret_access_key).encode(), headers['x-amz-date'][:8].encode(), hashlib.sha256).digest()
+# Hàm ký yêu cầu AWS S3
+def sign_request(method, url, headers, payload_hash=""):
+    canonical_uri = url.split(endpoint_url.rstrip('/'))[-1]
+    canonical_headers = ''.join(f"{k.lower()}:{v.strip()}\n" for k, v in sorted(headers.items()))
+    signed_headers = ';'.join(k.lower() for k in sorted(headers.keys()))
+    payload_hash = payload_hash or hashlib.sha256(b"").hexdigest()
+
+    # Tạo canonical request
+    canonical_request = (
+        f"{method}\n{canonical_uri}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
+    )
+    logging.debug(f"CanonicalRequest:\n{canonical_request}")
+
+    # Tạo StringToSign
+    date = headers['x-amz-date'][:8]
+    string_to_sign = (
+        f"AWS4-HMAC-SHA256\n{headers['x-amz-date']}\n"
+        f"{date}/us-east-1/s3/aws4_request\n{hashlib.sha256(canonical_request.encode()).hexdigest()}"
+    )
+    logging.debug(f"StringToSign:\n{string_to_sign}")
+
+    # Tạo chữ ký
+    date_key = hmac.new(('AWS4' + secret_access_key).encode(), date.encode(), hashlib.sha256).digest()
     region_key = hmac.new(date_key, b'us-east-1', hashlib.sha256).digest()
     service_key = hmac.new(region_key, b's3', hashlib.sha256).digest()
     signing_key = hmac.new(service_key, b'aws4_request', hashlib.sha256).digest()
-
     signature = hmac.new(signing_key, string_to_sign.encode(), hashlib.sha256).hexdigest()
-    headers['Authorization'] = f"AWS4-HMAC-SHA256 Credential={access_key_id}/{headers['x-amz-date'][:8]}/us-east-1/s3/aws4_request, SignedHeaders={signed_headers}, Signature={signature}"
+
+    headers['Authorization'] = (
+        f"AWS4-HMAC-SHA256 Credential={access_key_id}/{date}/us-east-1/s3/aws4_request, "
+        f"SignedHeaders={signed_headers}, Signature={signature}"
+    )
+    logging.debug(f"Signature:\n{signature}")
+
+# Tạo URL chính xác
+def build_url(bucket, key=None):
+    base_url = endpoint_url.rstrip('/')
+    if key:
+        return f"{base_url}/{bucket}/{key.lstrip('/')}"
+    return f"{base_url}/{bucket}"
 
 # Liệt kê các tệp
 def list_objects(prefix):
-    url = urljoin(endpoint_url, f"{bucket_name}?prefix={prefix}")
+    url = build_url(bucket_name, f"?prefix={prefix}")
     headers = {
-        "Host": url.split("//")[1],
-        "x-amz-date": datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+        "Host": endpoint_url.split("//")[1],
+        "x-amz-date": datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'),
     }
     sign_request("GET", url, headers)
     request = urllib.request.Request(url, headers=headers)
@@ -45,10 +74,10 @@ def list_objects(prefix):
 
 # Xóa tệp
 def delete_object(key):
-    url = urljoin(endpoint_url, f"{bucket_name}/{key}")
+    url = build_url(bucket_name, key)
     headers = {
-        "Host": url.split("//")[1],
-        "x-amz-date": datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+        "Host": endpoint_url.split("//")[1],
+        "x-amz-date": datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'),
     }
     sign_request("DELETE", url, headers)
     request = urllib.request.Request(url, headers=headers, method="DELETE")
@@ -57,15 +86,19 @@ def delete_object(key):
 
 # Tải lên tệp
 def upload_file(file_path, key):
-    url = urljoin(endpoint_url, f"{bucket_name}/{key}")
+    url = build_url(bucket_name, key)
+    with open(file_path, 'rb') as file:
+        file_data = file.read()
+    payload_hash = hashlib.sha256(file_data).hexdigest()
     headers = {
-        "Host": url.split("//")[1],
+        "Host": endpoint_url.split("//")[1],
         "x-amz-date": datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'),
+        "x-amz-content-sha256": payload_hash,
         "Content-Type": "application/octet-stream"
     }
-    sign_request("PUT", url, headers)
-    with open(file_path, 'rb') as file_data:
-        request = urllib.request.Request(url, data=file_data, headers=headers, method="PUT")
+    sign_request("PUT", url, headers, payload_hash)
+    with open(file_path, 'rb') as file:
+        request = urllib.request.Request(url, data=file, headers=headers, method="PUT")
         with urllib.request.urlopen(request) as response:
             return response.status
 
@@ -73,8 +106,6 @@ def upload_file(file_path, key):
 def delete_old_files(prefix, threshold_minutes=60):
     try:
         objects = list_objects(prefix)
-        # Parse XML response
-        from xml.etree import ElementTree as ET
         root = ET.fromstring(objects)
         for obj in root.findall('.//Contents'):
             key = obj.find('Key').text
