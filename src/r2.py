@@ -69,9 +69,15 @@ def delete_object(key):
         "x-amz-date": datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'),
     }
     sign_request("DELETE", url, headers)
+    logging.debug(f"DELETE URL: {url}")
+    logging.debug(f"DELETE Headers: {headers}")
     request = urllib.request.Request(url, headers=headers, method="DELETE")
-    with urllib.request.urlopen(request) as response:
-        return response.status
+    try:
+        with urllib.request.urlopen(request) as response:
+            return response.status
+    except urllib.error.HTTPError as e:
+        logging.error(f"HTTPError: {e.reason}, Code: {e.code}, URL: {url}")
+        raise
 
 def upload_file(file_path, key):
     url = build_url(bucket_name, key)
