@@ -72,7 +72,7 @@ def run_build(app_name: str, source: str) -> str:
 
     name = info[0].get("name", "")
 
-    output_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
+    output_apk_filepath = f"{app_name}-patch-v{downloader.version}.apk"
     
     patch_process = subprocess.Popen(
         [
@@ -103,11 +103,44 @@ def run_build(app_name: str, source: str) -> str:
 
     os.remove(input_apk_filepath)
 
+    source_path = f'./sources/{source}.json'
+    with open(source_path, 'r') as json_file:
+        info = json.load(json_file)
 
-    # release.create_github_release(app_name, source, download_files, output_apk_filepath)
+    name = info[0].get("name", "")
+
+    signed_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
+
+    signing_process = subprocess.Popen(
+        [
+            max(glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')), key=os.path.getctime),
+            "sign",
+            "--verbose",
+            "--ks", "./keystore/public.jks",
+            "--ks-pass", "pass:public",
+            "--key-pass", "pass:public",
+            "--ks-key-alias", "public",
+            "--in", output_apk_filepath,
+            "--out", signed_apk_filepath
+        ],
+        stdout=subprocess.PIPE,
+    )
+
+    for line in iter(signing_process.stdout.readline, b''):
+        logging.info(line.decode("utf-8").strip())
+
+    signing_process.stdout.close()
+    signing_return_code = signing_process.wait()
+
+    if signing_return_code != 0:
+        logging.error("An error occurred while signing the APK")
+        sys.exit(1)
+
+    os.remove(output_apk_filepath)
+    # release.create_github_release(app_name, source, download_files, signed_apk_filepath)
     
-    key = f"{app_name}/{output_apk_filepath}"
-    r2.upload(output_apk_filepath, key)
+    key = f"{app_name}/{signed_apk_filepath}"
+    r2.upload(signed_apk_filepath, key)
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
