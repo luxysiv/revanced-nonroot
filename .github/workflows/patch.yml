@@ -2,6 +2,8 @@ name: Patch Revanced
 on:
   push:
   workflow_dispatch:
+  schedule:
+    - cron: '0 0 */5 * *'
 
 jobs:
   patch-apps:
