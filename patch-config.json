@@ -1,5 +1,6 @@
 {
   "patch_list": [
+    { "app_name": "spotify", "source": "revanced" },
     { "app_name": "tiktok", "source": "revanced" },
     { "app_name": "youtube", "source": "revanced" },
     { "app_name": "youtube-music", "source": "revanced" },
