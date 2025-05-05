@@ -13,8 +13,6 @@
 ### Download
   - Download page: https://revanced-nonroot.timie.workers.dev/
  - [Revanced GmsCore](https://github.com/revanced/gmscore/releases/latest)
- - **Double click** on **folder** and **...** to **Download**
- - Delete .zip downloaded file
    > You can fork and add more sources and apps
 
 ### Usage 
