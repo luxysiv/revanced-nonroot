@@ -154,8 +154,8 @@ def run_build(app_name: str, source: str) -> str:
     os.remove(output_apk_filepath)
     # release.create_github_release(app_name, source, download_files, signed_apk_filepath)
 
-    #key = f"{app_name}/{signed_apk_filepath}"
-    #r2.upload(signed_apk_filepath, key)
+    key = f"{app_name}/{signed_apk_filepath}"
+    r2.upload(signed_apk_filepath, key)
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
