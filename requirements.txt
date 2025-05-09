@@ -1,3 +1,2 @@
-boto3
-cloudscraper
+requests
 beautifulsoup4
