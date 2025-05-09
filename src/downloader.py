@@ -6,7 +6,7 @@ from pathlib import Path
 from src import (
     apkpure, 
     version, 
-    scraper, 
+    session, 
     uptodown, 
     apkmirror 
 )
@@ -14,7 +14,7 @@ from src import (
 def download_resource(url: str, name: str) -> str:
     filepath = f"./{name}"
 
-    with scraper.get(url, stream=True) as res:
+    with session.get(url, stream=True) as res:
         res.raise_for_status()
         final_url = res.url 
 
@@ -50,7 +50,7 @@ def download_required(source: str) -> list:
         tag = repo_info['tag']
 
         url = detect_github_link(base_url, user, repo, tag)
-        response = scraper.get(url)
+        response = session.get(url)
         content_size = len(response.content)
         logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
         assets = response.json().get("assets", [])
@@ -65,7 +65,7 @@ def download_required(source: str) -> list:
 def detect_github_link(base_url: str, user: str, repo: str, tag: str) -> str:
     if tag in ["", "dev", "prerelease"]:
         url = f"https://api.github.com/repos/{user}/{repo}/releases"
-        response = scraper.get(url)
+        response = session.get(url)
         content_size = len(response.content)
         logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
         releases = response.json()

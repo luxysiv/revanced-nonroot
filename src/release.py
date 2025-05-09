@@ -3,7 +3,7 @@ import re
 import json
 
 from src import (
-    scraper,
+    session,
     repository,
     github_token
 )
@@ -42,7 +42,7 @@ def create_github_release(app_name, source, download_files, apk_file_path):
         print("APK file not found, skipping release.")
         return
 
-    existing_release = scraper.get(
+    existing_release = session.get(
         f"https://api.github.com/repos/{repository}/releases/tags/{tag_name}",
         headers={
             "Authorization": f"token {github_token}"
@@ -56,7 +56,7 @@ def create_github_release(app_name, source, download_files, apk_file_path):
         for asset in existing_assets:
             if asset['name'] == os.path.basename(apk_file_path):
                 asset_id = asset['id']
-                delete_response = scraper.delete(
+                delete_response = session.delete(
                     f"https://api.github.com/repos/{repository}/releases/assets/{asset_id}",
                     headers={
                         "Authorization": f"token {github_token}"
@@ -85,7 +85,7 @@ def create_github_release(app_name, source, download_files, apk_file_path):
             "name": release_name,
             "body": release_body
         }
-        new_release = scraper.post(
+        new_release = session.post(
             f"https://api.github.com/repos/{repository}/releases",
             headers={
                 "Authorization": f"token {github_token}",
@@ -100,7 +100,7 @@ def create_github_release(app_name, source, download_files, apk_file_path):
     with open(apk_file_path, 'rb') as apk_file:
         apk_file_content = apk_file.read()
 
-    response = scraper.post(
+    response = session.post(
         upload_url_apk,
         headers={
             "Authorization": f"token {github_token}",

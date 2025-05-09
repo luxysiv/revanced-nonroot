@@ -1,7 +1,7 @@
 import json
 import logging 
 
-from src import scraper 
+from src import session 
 from bs4 import BeautifulSoup
       
 def get_latest_version(app_name: str) -> str:
@@ -11,7 +11,7 @@ def get_latest_version(app_name: str) -> str:
     
     url = f"https://apkpure.net/{config['name']}/{config['package']}/versions"
 
-    response = scraper.get(url)
+    response = session.get(url)
     response.raise_for_status()
     content_size = len(response.content)
     logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
@@ -32,7 +32,7 @@ def get_download_link(version: str, app_name: str) ->str:
     
     url = f"https://apkpure.net/{config['name']}/{config['package']}/download/{version}"
 
-    response = scraper.get(url)
+    response = session.get(url)
     response.raise_for_status()
     content_size = len(response.content)
     logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")

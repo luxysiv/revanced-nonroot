@@ -1,7 +1,7 @@
 import json
 import logging 
 
-from src import scraper 
+from src import session 
 from bs4 import BeautifulSoup
 
 def get_latest_version(app_name: str) -> str:
@@ -11,7 +11,7 @@ def get_latest_version(app_name: str) -> str:
 
     url = f"https://{config['name']}.en.uptodown.com/android/versions"
 
-    response = scraper.get(url)
+    response = session.get(url)
     response.raise_for_status()
     content_size = len(response.content)
     logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
@@ -28,7 +28,7 @@ def get_download_link(version: str, app_name: str) -> str:
         config = json.load(file)
 
     base_url = f"https://{config['name']}.en.uptodown.com/android"
-    response = scraper.get(f"{base_url}/versions")
+    response = session.get(f"{base_url}/versions")
     response.raise_for_status()
     
     soup = BeautifulSoup(response.content, "html.parser")
@@ -36,14 +36,14 @@ def get_download_link(version: str, app_name: str) -> str:
 
     page = 1
     while True:
-        response = scraper.get(f"{base_url}/apps/{data_code}/versions/{page}")
+        response = session.get(f"{base_url}/apps/{data_code}/versions/{page}")
         response.raise_for_status()
         version_data = response.json().get('data', [])
         
         for entry in version_data:
             if entry["version"] == version:
                 version_url = entry["versionURL"]
-                version_page = scraper.get(version_url)
+                version_page = session.get(version_url)
                 version_page.raise_for_status()
                 soup = BeautifulSoup(version_page.content, "html.parser")
                 
@@ -52,7 +52,7 @@ def get_download_link(version: str, app_name: str) -> str:
                 if "download-link-deeplink" in button['onclick']:
                     # Update versionURL by adding '-x'
                     version_url += '-x'
-                    version_page = scraper.get(version_url)
+                    version_page = session.get(version_url)
                     version_page.raise_for_status()
                     soup = BeautifulSoup(version_page.content, "html.parser")
                     button = soup.find('button', id='detail-download-button')

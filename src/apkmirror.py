@@ -2,7 +2,7 @@ import re
 import json
 import logging
 from bs4 import BeautifulSoup
-from src import base_url, scraper
+from src import base_url, session
 
 def get_download_link(version: str, app_name: str) -> str:
     conf_file_path = f'./apps/apkmirror/{app_name}.json'
@@ -13,7 +13,7 @@ def get_download_link(version: str, app_name: str) -> str:
     url = (f"{base_url}/apk/{config['org']}/{config['name']}/"
            f"{config['name']}-{version.replace('.', '-')}-release/")
     
-    response = scraper.get(url)
+    response = session.get(url)
     response.raise_for_status()
     content_size = len(response.content)
     logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
@@ -32,7 +32,7 @@ def get_download_link(version: str, app_name: str) -> str:
     if not download_page_url:
         return None
 
-    response = scraper.get(download_page_url)
+    response = session.get(download_page_url)
     response.raise_for_status()
     content_size = len(response.content)
     logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
@@ -41,7 +41,7 @@ def get_download_link(version: str, app_name: str) -> str:
     sub_url = soup.find('a', class_='downloadButton')
     if sub_url:
         final_download_page_url = base_url + sub_url['href']
-        response = scraper.get(final_download_page_url)
+        response = session.get(final_download_page_url)
         response.raise_for_status()
         content_size = len(response.content)
         logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
@@ -62,7 +62,7 @@ def get_latest_version(app_name: str) -> str:
         
     url = f"{base_url}/uploads/?appcategory={config['name']}"
 
-    response = scraper.get(url)
+    response = session.get(url)
     response.raise_for_status()
     content_size = len(response.content)
     logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
