@@ -1,22 +1,38 @@
 import json
 import logging
 import subprocess
+import os
+import re
 from pathlib import Path
+from urllib.parse import urlparse, unquote
 
 from src import (
-    apkpure, 
-    version, 
-    session, 
-    uptodown, 
-    apkmirror 
+    apkpure,
+    version,
+    session,
+    uptodown,
+    apkmirror
 )
 
-def download_resource(url: str, name: str) -> str:
-    filepath = f"./{name}"
-
+def download_resource(url: str, name: str = None) -> str:
     with session.get(url, stream=True) as res:
         res.raise_for_status()
-        final_url = res.url 
+        final_url = res.url
+
+        # Try to get filename from Content-Disposition
+        cd = res.headers.get('content-disposition')
+        if cd:
+            filename_match = re.search('filename="?([^"]+)"?', cd)
+            if filename_match:
+                name = filename_match.group(1)
+
+        # Fallback: get from URL
+        if not name:
+            parsed_url = urlparse(final_url)
+            name = os.path.basename(parsed_url.path)
+            name = unquote(name.split('?')[0])
+
+        filepath = f"./{name}"
 
         total_size = int(res.headers.get('content-length', 0))
         downloaded_size = 0
@@ -29,9 +45,8 @@ def download_resource(url: str, name: str) -> str:
         logging.info(
             f"URL:{final_url} [{downloaded_size}/{total_size}] -> \"{name}\" [1]"
         )
-        
-    return filepath
 
+    return filepath
 
 def download_required(source: str) -> list:
     downloaded_files = []
@@ -56,11 +71,10 @@ def download_required(source: str) -> list:
         assets = response.json().get("assets", [])
 
         for asset in assets:
-            filepath = download_resource(asset["browser_download_url"], asset["name"])
+            filepath = download_resource(asset["browser_download_url"])
             downloaded_files.append(filepath)
 
     return downloaded_files
-
 
 def detect_github_link(base_url: str, user: str, repo: str, tag: str) -> str:
     if tag in ["", "dev", "prerelease"]:
@@ -84,82 +98,87 @@ def detect_github_link(base_url: str, user: str, repo: str, tag: str) -> str:
     else:
         return base_url.format(user, repo, tag)
 
-
 def normalize_version(version):
-    return list(map(int, version.split('.')))
-
+    parts = version.split('.')
+    normalized = []
+    for part in parts:
+        match = re.match(r'(\d+)', part)
+        if match:
+            normalized.append(int(match.group(1)))
+        else:
+            normalized.append(0)
+    return normalized
 
 def get_highest_version(versions):
     if not versions:
         return None
-
-    
     highest_version = versions[0]
-    for version in versions[1:]:
-        if normalize_version(version) > normalize_version(highest_version):
-            highest_version = version
-
+    for v in versions[1:]:
+        if normalize_version(v) > normalize_version(highest_version):
+            highest_version = v
     return highest_version
-
 
 def get_supported_version(package_name, cli, patches):
     output = subprocess.check_output([
-        'java', '-jar', cli, 
+        'java', '-jar', cli,
         'list-versions',
         '-f', f'{package_name}',
         patches
     ])
     output = output.decode('utf-8')
-
     versions = [
         line.split(' ')[0].strip()
         for line in output.splitlines()[2:]
         if 'Any' not in line and line.split(' ')[0].strip()
     ]
-    
     if not versions:
         return None
+    return get_highest_version(versions)
 
-    highest_version = get_highest_version(versions)
-    return highest_version
-
-
-def download_platform(app_name: str, platform: str, cli: str, patches: str) -> str:
-    global version
+def download_platform(app_name: str, platform: str, cli: str, patches: str) -> tuple[str, str]:
     try:
         config_path = Path(f'./apps/{platform}/{app_name}.json')
-        
-        # Check if config file exists
         if not config_path.exists():
             raise FileNotFoundError(f"Config file not found: {config_path}")
 
         with config_path.open() as json_file:
             config = json.load(json_file)
 
-        version = config.get('version')
-        if not version:
-            version = get_supported_version(config['package'], cli, patches)
+        ver = config.get('version')
+        if not ver:
+            ver = get_supported_version(config['package'], cli, patches)
 
         platform_module = globals()[platform]
-        if not version:
-            version = platform_module.get_latest_version(app_name)
+        if not ver:
+            ver = platform_module.get_latest_version(app_name)
 
-        download_link = platform_module.get_download_link(version, app_name)
-        filename = f"{app_name}-v{version}.apk"
-        return download_resource(download_link, filename)
+        download_link = platform_module.get_download_link(ver, app_name)
+        filepath = download_resource(download_link)
+        return filepath, ver
 
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
-        return None
-    
+        return None, None
 
-def download_apkmirror(app_name: str, cli: str, patches: str) -> str:
+def download_apkmirror(app_name: str, cli: str, patches: str) -> tuple[str, str]:
     return download_platform(app_name, "apkmirror", cli, patches)
 
-
-def download_apkpure(app_name: str, cli: str, patches: str) -> str:
+def download_apkpure(app_name: str, cli: str, patches: str) -> tuple[str, str]:
     return download_platform(app_name, "apkpure", cli, patches)
 
+def download_uptodown(app_name: str, cli: str, patches: str) -> tuple[str, str]:
+    return download_platform(app_name, "uptodown", cli, patches)
 
-def download_uptodown(app_name: str, cli: str, patches: str) -> str:
-    return download_platform(app_name, "uptodown", cli, patches)    
+def download_apkeditor() -> str:
+    base_url = "https://api.github.com/repos/{}/{}/releases/latest"
+    url = detect_github_link(base_url, "REAndroid", "APKEditor", "latest")
+    response = session.get(url)
+    content_size = len(response.content)
+    logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
+    assets = response.json().get("assets", [])
+
+    for asset in assets:
+        if asset["name"].endswith(".jar"):
+            return download_resource(asset["browser_download_url"])
+
+    raise RuntimeError("APKEditor .jar file not found in the latest release")

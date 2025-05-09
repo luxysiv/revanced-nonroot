@@ -16,11 +16,11 @@ def run_build(app_name: str, source: str) -> str:
     find_file = lambda prefix, ext: next(
         (file for file in download_files if file.startswith(prefix) and file.endswith(ext)),
         None
-       )
+    )
 
     revanced_cli = find_file('./revanced-cli', '.jar')
     revanced_patches = find_file('./patches', '.rvp')
-    
+
     download_methods = [
         downloader.download_apkmirror,
         downloader.download_uptodown,
@@ -28,14 +28,40 @@ def run_build(app_name: str, source: str) -> str:
     ]
 
     input_apk_filepath = None
+    version = None
     for method in download_methods:
-        input_apk_filepath = method(app_name, revanced_cli, revanced_patches)
+        input_apk_filepath, version = method(app_name, revanced_cli, revanced_patches)
         if input_apk_filepath:
             break
 
     if not input_apk_filepath:
-        exit(0)
-        
+        logging.error("Failed to download APK from all sources")
+        exit(1)
+
+    if not input_apk_filepath.endswith(".apk"):
+        logging.warning("Input file is not .apk, using APKEditor to merge")
+        apk_editor_jar = downloader.download_apkeditor()
+
+        before_files = set(glob.glob("./*.apk"))
+
+        merge_proc = subprocess.run(
+            ["java", "-jar", apk_editor_jar, "m", "-i", input_apk_filepath],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE
+        )
+        if merge_proc.returncode != 0:
+            logging.error("APKEditor merge failed")
+            exit(1)
+
+        after_files = set(glob.glob("./*.apk"))
+        new_files = list(after_files - before_files)
+
+        if not new_files:
+            logging.error("Merged APK not found after APKEditor merge")
+            exit(1)
+
+        input_apk_filepath = new_files[0]
+
     exclude_patches = []
     include_patches = []
 
@@ -51,7 +77,7 @@ def run_build(app_name: str, source: str) -> str:
                     include_patches.append("-e")
                     include_patches.append(line[1:].strip())
 
-    libs_process = subprocess.Popen(
+    subprocess.run(
         [
             "zip",
             "--delete",
@@ -59,21 +85,16 @@ def run_build(app_name: str, source: str) -> str:
             "lib/x86/*",
             "lib/x86_64/*",
         ],
-        stdout=subprocess.DEVNULL,  
-        stderr=subprocess.PIPE     
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE
     )
 
-    _, stderr = libs_process.communicate()
-    libs_return_code = libs_process.returncode
-
-    source_path = f'./sources/{source}.json'
-    with open(source_path, 'r') as json_file:
+    with open(f'./sources/{source}.json', 'r') as json_file:
         info = json.load(json_file)
-
     name = info[0].get("name", "")
 
-    output_apk_filepath = f"{app_name}-patch-v{downloader.version}.apk"
-    
+    output_apk_filepath = f"{app_name}-patch-v{version}.apk"
+
     patch_process = subprocess.Popen(
         [
             "java",
@@ -98,18 +119,12 @@ def run_build(app_name: str, source: str) -> str:
     patch_return_code = patch_process.wait()
 
     if patch_return_code != 0:
-        logging.error("An error occurred while running the Java program")
+        logging.error("An error occurred while patching the APK")
         sys.exit(1)
 
     os.remove(input_apk_filepath)
 
-    source_path = f'./sources/{source}.json'
-    with open(source_path, 'r') as json_file:
-        info = json.load(json_file)
-
-    name = info[0].get("name", "")
-
-    signed_apk_filepath = f"{app_name}-{name}-v{downloader.version}.apk"
+    signed_apk_filepath = f"{app_name}-{name}-v{version}.apk"
 
     signing_process = subprocess.Popen(
         [
@@ -138,9 +153,9 @@ def run_build(app_name: str, source: str) -> str:
 
     os.remove(output_apk_filepath)
     # release.create_github_release(app_name, source, download_files, signed_apk_filepath)
-    
-    key = f"{app_name}/{signed_apk_filepath}"
-    r2.upload(signed_apk_filepath, key)
+
+    #key = f"{app_name}/{signed_apk_filepath}"
+    #r2.upload(signed_apk_filepath, key)
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
