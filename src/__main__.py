@@ -6,6 +6,7 @@ import logging
 import zipfile
 import tempfile
 import shutil
+import subprocess
 from sys import exit
 from src import (
     r2,
