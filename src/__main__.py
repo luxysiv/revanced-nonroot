@@ -3,13 +3,28 @@ import sys
 import json
 import glob
 import logging
-import subprocess
+import zipfile
+import tempfile
+import shutil
 from sys import exit
 from src import (
     r2,
     release,
     downloader
 )
+
+def delete_from_zip(zip_path, patterns):
+    with zipfile.ZipFile(zip_path, 'r') as zin:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_zip_path = tmp_file.name
+
+        with zipfile.ZipFile(tmp_zip_path, 'w') as zout:
+            for item in zin.infolist():
+                if not any(item.filename.startswith(p.rstrip('*')) for p in patterns):
+                    buffer = zin.read(item.filename)
+                    zout.writestr(item, buffer)
+
+    shutil.move(tmp_zip_path, zip_path)
 
 def run_build(app_name: str, source: str) -> str:
     download_files = downloader.download_required(source)
@@ -77,17 +92,8 @@ def run_build(app_name: str, source: str) -> str:
                     include_patches.append("-e")
                     include_patches.append(line[1:].strip())
 
-    subprocess.run(
-        [
-            "zip",
-            "--delete",
-            input_apk_filepath,
-            "lib/x86/*",
-            "lib/x86_64/*",
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE
-    )
+    # Replace zip --delete with Python logic
+    delete_from_zip(input_apk_filepath, ["lib/x86/", "lib/x86_64/"])
 
     with open(f'./sources/{source}.json', 'r') as json_file:
         info = json.load(json_file)
