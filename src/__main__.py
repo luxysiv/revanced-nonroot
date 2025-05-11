@@ -42,25 +42,20 @@ def run_build(app_name: str, source: str) -> str:
         logging.warning("Input file is not .apk, using APKEditor to merge")
         apk_editor_jar = downloader.download_apkeditor()
 
-        before_files = set(glob.glob("./*.apk"))
-
-        merge_proc = subprocess.run(
+        subprocess.run(
             ["java", "-jar", apk_editor_jar, "m", "-i", input_apk_filepath],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE
+            stderr=subprocess.DEVNULL
         )
-        if merge_proc.returncode != 0:
-            logging.error("APKEditor merge failed")
+
+        apk_filename = next((f for f in glob.glob("*_merged.apk")), None)
+
+        if not apk_filename or not os.path.exists(apk_filename):
+            logging.error("Merged APK file not found")
             exit(1)
 
-        after_files = set(glob.glob("./*.apk"))
-        new_files = list(after_files - before_files)
-
-        if not new_files:
-            logging.error("Merged APK not found after APKEditor merge")
-            exit(1)
-
-        input_apk_filepath = new_files[0]
+        input_apk_filepath = apk_filename
+        logging.info(f"Merged APK file detected: {input_apk_filepath}")
 
     exclude_patches = []
     include_patches = []
