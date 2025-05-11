@@ -190,10 +190,10 @@ def download_apkeditor() -> str:
     response = session.get(url)
     content_size = len(response.content)
     logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
-    assets = response.json().get("assets", [])
+    assets = response.json()["assets"] or []
 
     for asset in assets:
-        if asset["name"].endswith(".jar"):
+        if asset["name"].startswith("APKEditor") and asset["name"].endswith(".jar"):
             return download_resource(asset["browser_download_url"])
 
     raise RuntimeError("APKEditor .jar file not found in the latest release")
