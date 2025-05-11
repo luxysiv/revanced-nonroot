@@ -1,12 +1,10 @@
-**YouTube Revanced** & **YouTube Music Revanced**
-
 **Now, this repository can build more sources and apps.**
 
 **Script auto change APK's source if download APK failure & merge if bundle**
 
-**Files upload to R2 Cloudflare**
+**Files will be upload to R2 Cloudflare**
 
-**Download link below is R2. It's fast.**
+**Link's download below is R2. It's fast.**
 
 ### Download
   - Download page: https://revanced-nonroot.timie.workers.dev/
