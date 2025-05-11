@@ -3,9 +3,9 @@ import logging
 import subprocess
 import os
 import re
+import cgi
 from pathlib import Path
-from urllib.parse import urlparse, unquote
-
+from urllib.parse import urlparse, unquote, parse_qs
 from src import (
     apkpure,
     version,
@@ -14,36 +14,51 @@ from src import (
     apkmirror
 )
 
+def extract_filename(response, fallback_url=None) -> str:
+    # 1. Try Content-Disposition header
+    cd = response.headers.get('content-disposition')
+    if cd:
+        _, params = cgi.parse_header(cd)
+        filename = params.get('filename') or params.get('filename*')
+        if filename:
+            return unquote(filename)
+
+    # 2. Try response-content-disposition from query string
+    parsed = urlparse(response.url)
+    query_params = parse_qs(parsed.query)
+    rcd = query_params.get('response-content-disposition')
+    if rcd:
+        _, params = cgi.parse_header(unquote(rcd[0]))
+        filename = params.get('filename') or params.get('filename*')
+        if filename:
+            return unquote(filename)
+
+    # 3. Fallback to URL path
+    path = urlparse(fallback_url or response.url).path
+    return unquote(os.path.basename(path))
+
+
 def download_resource(url: str, name: str = None) -> str:
     with session.get(url, stream=True) as res:
         res.raise_for_status()
         final_url = res.url
 
-        # Try to get filename from Content-Disposition
-        cd = res.headers.get('content-disposition')
-        if cd:
-            filename_match = re.search('filename="?([^"]+)"?', cd)
-            if filename_match:
-                name = filename_match.group(1)
-
-        # Fallback: get from URL
+        # Determine filename
         if not name:
-            parsed_url = urlparse(final_url)
-            name = os.path.basename(parsed_url.path)
-            name = unquote(name.split('?')[0])
+            name = extract_filename(res, fallback_url=final_url)
 
         filepath = f"./{name}"
-
         total_size = int(res.headers.get('content-length', 0))
         downloaded_size = 0
 
         with open(filepath, "wb") as file:
             for chunk in res.iter_content(chunk_size=8192):
-                file.write(chunk)
-                downloaded_size += len(chunk)
+                if chunk:
+                    file.write(chunk)
+                    downloaded_size += len(chunk)
 
         logging.info(
-            f"URL:{final_url} [{downloaded_size}/{total_size}] -> \"{name}\" [1]"
+            f"URL: {final_url} [{downloaded_size}/{total_size}] -> \"{name}\" [1]"
         )
 
     return filepath
@@ -68,7 +83,7 @@ def download_required(source: str) -> list:
         response = session.get(url)
         content_size = len(response.content)
         logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
-        assets = response.json().get("assets", [])
+        assets = response.json()["assets"] or []
 
         for asset in assets:
             filepath = download_resource(asset["browser_download_url"])
@@ -144,7 +159,7 @@ def download_platform(app_name: str, platform: str, cli: str, patches: str) -> t
         with config_path.open() as json_file:
             config = json.load(json_file)
 
-        ver = config.get('version')
+        ver = config['version'] or None
         if not ver:
             ver = get_supported_version(config['package'], cli, patches)
 
