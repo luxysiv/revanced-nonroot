@@ -27,23 +27,23 @@ def run_build(app_name: str, source: str) -> str:
         downloader.download_apkpure
     ]
 
-    input_apk_filepath = None
+    input_apk = None
     version = None
     for method in download_methods:
-        input_apk_filepath, version = method(app_name, revanced_cli, revanced_patches)
-        if input_apk_filepath:
+        input_apk, version = method(app_name, revanced_cli, revanced_patches)
+        if input_apk:
             break
 
-    if not input_apk_filepath:
+    if not input_apk:
         logging.error("Failed to download APK from all sources")
         exit(1)
 
-    if not input_apk_filepath.endswith(".apk"):
+    if not input_apk.endswith(".apk"):
         logging.warning("Input file is not .apk, using APKEditor to merge")
-        apk_editor_jar = downloader.download_apkeditor()
+        apk_editor = downloader.download_apkeditor()
 
         subprocess.run(
-            ["java", "-jar", apk_editor_jar, "m", "-i", input_apk_filepath],
+            ["java", "-jar", apk_editor, "m", "-i", input_apk],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
@@ -54,8 +54,8 @@ def run_build(app_name: str, source: str) -> str:
             logging.error("Merged APK file not found")
             exit(1)
 
-        input_apk_filepath = apk_filename
-        logging.info(f"Merged APK file detected: {input_apk_filepath}")
+        input_apk = apk_filename
+        logging.info(f"Merged APK file detected: {input_apk}")
 
     exclude_patches = []
     include_patches = []
@@ -76,7 +76,7 @@ def run_build(app_name: str, source: str) -> str:
         [
             "zip",
             "--delete",
-            input_apk_filepath,
+            input_apk,
             "lib/x86/*",
             "lib/x86_64/*",
         ],
@@ -88,7 +88,7 @@ def run_build(app_name: str, source: str) -> str:
         info = json.load(json_file)
     name = info[0].get("name", "")
 
-    output_apk_filepath = f"{app_name}-patch-v{version}.apk"
+    output_apk = f"{app_name}-patch-v{version}.apk"
 
     patch_process = subprocess.Popen(
         [
@@ -99,8 +99,8 @@ def run_build(app_name: str, source: str) -> str:
             "--patches",
             revanced_patches,
             "--out",
-            output_apk_filepath,
-            input_apk_filepath,
+            output_apk,
+            input_apk,
             *exclude_patches,
             *include_patches,
         ],
@@ -117,9 +117,9 @@ def run_build(app_name: str, source: str) -> str:
         logging.error("An error occurred while patching the APK")
         sys.exit(1)
 
-    os.remove(input_apk_filepath)
+    os.remove(input_apk)
 
-    signed_apk_filepath = f"{app_name}-{name}-v{version}.apk"
+    signed_apk = f"{app_name}-{name}-v{version}.apk"
 
     signing_process = subprocess.Popen(
         [
@@ -130,8 +130,8 @@ def run_build(app_name: str, source: str) -> str:
             "--ks-pass", "pass:public",
             "--key-pass", "pass:public",
             "--ks-key-alias", "public",
-            "--in", output_apk_filepath,
-            "--out", signed_apk_filepath
+            "--in", output_apk,
+            "--out", signed_apk
         ],
         stdout=subprocess.PIPE,
     )
@@ -146,11 +146,11 @@ def run_build(app_name: str, source: str) -> str:
         logging.error("An error occurred while signing the APK")
         sys.exit(1)
 
-    os.remove(output_apk_filepath)
-    # release.create_github_release(app_name, source, download_files, signed_apk_filepath)
+    os.remove(output_apk)
+    # release.create_github_release(app_name, source, download_files, signed_apk)
 
-    key = f"{app_name}/{signed_apk_filepath}"
-    r2.upload(signed_apk_filepath, key)
+    key = f"{app_name}/{signed_apk}"
+    r2.upload(signed_apk, key)
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
