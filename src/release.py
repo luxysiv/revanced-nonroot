@@ -12,15 +12,15 @@ def convert_title(text):
     pattern = re.compile(r'\b([a-z0-9]+(?:-[a-z0-9]+)*)\b', re.IGNORECASE)
     return pattern.sub(lambda match: match.group(1).replace('-', ' ').title(), text)
 
-def extract_version(file_path):
-    if file_path:
-        base_name = os.path.splitext(os.path.basename(file_path))[0]
+def extract_version(file):
+    if file:
+        base_name = os.path.splitext(os.path.basename(file))[0]
         match = re.search(r'(\d+\.\d+\.\d+(-[a-z]+\.\d+)?(-release\d*)?)', base_name)
         if match:
             return match.group(1)
     return 'unknown'
 
-def create_github_release(app_name, source, download_files, apk_file_path):
+def create_github_release(app_name, source, download_files, apk_file):
     source_path = f'./sources/{source}.json'
     with open(source_path, 'r') as json_file:
         info = json.load(json_file)
@@ -31,14 +31,14 @@ def create_github_release(app_name, source, download_files, apk_file_path):
         (file for file in download_files if file.startswith(prefix) and file.endswith(ext)),
         None
     )
-    cli_file_path = find_file('./revanced-cli', '.jar')
-    patch_file_path = find_file('./patches', '.rvp')
+    cli_file = find_file('./revanced-cli', '.jar')
+    patch_file = find_file('./patches', '.rvp')
 
-    patchver = extract_version(patch_file_path)
-    cliver = extract_version(cli_file_path)
+    patchver = extract_version(patch_file)
+    cliver = extract_version(cli_file)
     tag_name = f"{name}-v{patchver}"
 
-    if not apk_file_path:
+    if not apk_file:
         print("APK file not found, skipping release.")
         return
 
@@ -54,7 +54,7 @@ def create_github_release(app_name, source, download_files, apk_file_path):
 
         existing_assets = existing_release.get('assets', [])
         for asset in existing_assets:
-            if asset['name'] == os.path.basename(apk_file_path):
+            if asset['name'] == os.path.basename(apk_file):
                 asset_id = asset['id']
                 delete_response = session.delete(
                     f"https://api.github.com/repos/{repository}/releases/assets/{asset_id}",
@@ -96,9 +96,9 @@ def create_github_release(app_name, source, download_files, apk_file_path):
 
         existing_release_id = new_release["id"]
 
-    upload_url_apk = f"https://uploads.github.com/repos/{repository}/releases/{existing_release_id}/assets?name={os.path.basename(apk_file_path)}"
-    with open(apk_file_path, 'rb') as apk_file:
-        apk_file_content = apk_file.read()
+    upload_url_apk = f"https://uploads.github.com/repos/{repository}/releases/{existing_release_id}/assets?name={os.path.basename(apk_file)}"
+    with open(apk_file, 'rb') as apk_file:
+        file_content = apk_file.read()
 
     response = session.post(
         upload_url_apk,
@@ -106,5 +106,5 @@ def create_github_release(app_name, source, download_files, apk_file_path):
             "Authorization": f"token {github_token}",
             "Content-Type": "application/vnd.android.package-archive"
         },
-        data=apk_file_content
+        data=file_content
     )
