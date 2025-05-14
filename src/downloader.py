@@ -65,17 +65,14 @@ def download_platform(app_name: str, platform: str, cli: str, patches: str) -> t
         with config_path.open() as json_file:
             config = json.load(json_file)
 
-        ver = config["version"]
-        if not ver:
-            ver = utils.get_supported_version(config['package'], cli, patches)
+        version = config["version"] or utils.get_supported_version(config['package'], cli, patches)
 
         platform_module = globals()[platform]
-        if not ver:
-            ver = platform_module.get_latest_version(app_name, config)
+        version = version or platform_module.get_latest_version(app_name, config)
 
-        download_link = platform_module.get_download_link(ver, app_name, config)
+        download_link = platform_module.get_download_link(version, app_name, config)
         filepath = download_resource(download_link)
-        return filepath, ver
+        return filepath, version 
 
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
