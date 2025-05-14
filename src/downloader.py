@@ -9,7 +9,7 @@ from src import (
     apkmirror
 )
 
-def download_resource(url: str, name: str = None) -> str:
+def download_resource(url: str, name: str = None) -> Path:
     with session.get(url, stream=True) as res:
         res.raise_for_status()
         final_url = res.url
@@ -18,7 +18,7 @@ def download_resource(url: str, name: str = None) -> str:
         if not name:
             name = utils.extract_filename(res, fallback_url=final_url)
 
-        filepath = f"./{name}"
+        filepath = Path(name)
         total_size = int(res.headers.get('content-length', 0))
         downloaded_size = 0
 
@@ -35,8 +35,8 @@ def download_resource(url: str, name: str = None) -> str:
     return filepath
 
 def download_required(source: str) -> tuple[list, str]:
-    source_path = f'./sources/{source}.json'
-    with open(source_path) as json_file:
+    source_path = Path("sources") / f"{source}.json"
+    with source_path.open() as json_file:
         repos_info = json.load(json_file)
 
     name = repos_info[0]["name"]
@@ -56,7 +56,7 @@ def download_required(source: str) -> tuple[list, str]:
 
     return downloaded_files, name
 
-def download_platform(app_name: str, platform: str, cli: str, patches: str) -> tuple[str, str]:
+def download_platform(app_name: str, platform: str, cli: str, patches: str) -> tuple[Path, str]:
     try:
         config_path = Path(f'./apps/{platform}/{app_name}.json')
         if not config_path.exists():
