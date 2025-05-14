@@ -13,11 +13,9 @@ from src import (
 
 def run_build(app_name: str, source: str) -> str:
     download_files, name = downloader.download_required(source)
-    def find_file_by_prefix_suffix(prefix, ext):
-        return next((f for f in download_files if f.startswith(prefix) and f.endswith(ext)), None)
-
-    revanced_cli = find_file_by_prefix_suffix('./revanced-cli', '.jar')
-    revanced_patches = find_file_by_prefix_suffix('./patches', '.rvp')
+    
+    revanced_cli = utils.find_file('./revanced-cli', '.jar')
+    revanced_patches = utils.find_file('./patches', '.rvp')
 
     download_methods = [
         downloader.download_apkmirror,
