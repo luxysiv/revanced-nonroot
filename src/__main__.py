@@ -14,8 +14,8 @@ from src import (
 def run_build(app_name: str, source: str) -> str:
     download_files, name = downloader.download_required(source)
     
-    revanced_cli = utils.find_file(download_files, './revanced-cli', '.jar')
-    revanced_patches = utils.find_file(download_files, './patches', '.rvp')
+    revanced_cli = utils.find_file(download_files, 'revanced-cli', '.jar')
+    revanced_patches = utils.find_file(download_files, 'patches', '.rvp')
 
     download_methods = [
         downloader.download_apkmirror,
