@@ -4,12 +4,69 @@ import json
 import glob
 import logging
 import subprocess
+from typing import List, Optional
 from sys import exit
 from src import (
     r2,
     release,
     downloader
 )
+
+def run_process(
+    command: List[str],
+    cwd: Optional[str] = None,
+    capture_output: bool = False,
+    capture_stderr: bool = False,
+    silent: bool = False,
+    check: bool = True,
+    shell: bool = False,
+    stream: bool = False
+) -> Optional[str | tuple[str, str] | int]:
+    if stream:
+        process = subprocess.Popen(
+            command,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            shell=shell
+        )
+        for line in iter(process.stdout.readline, ''):
+            if line.strip():
+                logging.info(line.strip())
+        process.stdout.close()
+        return process.wait()
+    else:
+        stdout_opt = subprocess.PIPE if capture_output else (subprocess.DEVNULL if silent else None)
+        if capture_stderr:
+            stderr_opt = subprocess.PIPE
+        elif capture_output:
+            stderr_opt = subprocess.STDOUT
+        else:
+            stderr_opt = subprocess.DEVNULL if silent else None
+
+        try:
+            result = subprocess.run(
+                command,
+                cwd=cwd,
+                stdout=stdout_opt,
+                stderr=stderr_opt,
+                text=True,
+                shell=shell
+            )
+            if capture_output and capture_stderr:
+                return result.stdout.strip(), result.stderr.strip()
+            elif capture_output:
+                return result.stdout.strip()
+            elif result.returncode != 0 and check:
+                logging.error(f"Command failed: {' '.join(command)}")
+                if result.stderr:
+                    logging.error(result.stderr.strip())
+                exit(result.returncode)
+            return result.returncode
+        except FileNotFoundError:
+            logging.error(f"Command not found: {command[0]}")
+            exit(1)
 
 def run_build(app_name: str, source: str) -> str:
     download_files = downloader.download_required(source)
@@ -42,12 +99,9 @@ def run_build(app_name: str, source: str) -> str:
         logging.warning("Input file is not .apk, using APKEditor to merge")
         apk_editor = downloader.download_apkeditor()
 
-        subprocess.run(
-            ["java", "-jar", apk_editor, "m", "-i", input_apk],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
+        run_process(["java", "-jar", apk_editor, "m", "-i", input_apk], silent=True)
 
+        os.remove(input_apk)
         apk_filename = next((f for f in glob.glob("*_merged.apk")), None)
 
         if not apk_filename or not os.path.exists(apk_filename):
@@ -72,17 +126,13 @@ def run_build(app_name: str, source: str) -> str:
                     include_patches.append("-e")
                     include_patches.append(line[1:].strip())
 
-    subprocess.run(
-        [
-            "zip",
-            "--delete",
-            input_apk,
-            "lib/x86/*",
-            "lib/x86_64/*",
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE
-    )
+    run_process([
+        "zip",
+        "--delete",
+        input_apk,
+        "lib/x86/*",
+        "lib/x86_64/*"
+    ], silent=True, check=False)
 
     with open(f'./sources/{source}.json', 'r') as json_file:
         info = json.load(json_file)
@@ -90,67 +140,43 @@ def run_build(app_name: str, source: str) -> str:
 
     output_apk = f"{app_name}-patch-v{version}.apk"
 
-    patch_process = subprocess.Popen(
-        [
-            "java",
-            "-jar",
-            revanced_cli,
-            "patch",
-            "--patches",
-            revanced_patches,
-            "--out",
-            output_apk,
-            input_apk,
-            *exclude_patches,
-            *include_patches,
-        ],
-        stdout=subprocess.PIPE,
-    )
-
-    for line in iter(patch_process.stdout.readline, b''):
-        logging.info(line.decode("utf-8").strip())
-
-    patch_process.stdout.close()
-    patch_return_code = patch_process.wait()
-
-    if patch_return_code != 0:
-        logging.error("An error occurred while patching the APK")
-        sys.exit(1)
+    run_process([
+        "java",
+        "-jar",
+        revanced_cli,
+        "patch",
+        "--patches",
+        revanced_patches,
+        "--out",
+        output_apk,
+        input_apk,
+        *exclude_patches,
+        *include_patches
+    ], stream=True)
 
     os.remove(input_apk)
-
     signed_apk = f"{app_name}-{name}-v{version}.apk"
 
-    signing_process = subprocess.Popen(
-        [
-            max(glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')), key=os.path.getctime),
-            "sign",
-            "--verbose",
-            "--ks", "./keystore/public.jks",
-            "--ks-pass", "pass:public",
-            "--key-pass", "pass:public",
-            "--ks-key-alias", "public",
-            "--in", output_apk,
-            "--out", signed_apk
-        ],
-        stdout=subprocess.PIPE,
+    apksigner_path = max(
+        glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')),
+        key=os.path.getctime
     )
 
-    for line in iter(signing_process.stdout.readline, b''):
-        logging.info(line.decode("utf-8").strip())
-
-    signing_process.stdout.close()
-    signing_return_code = signing_process.wait()
-
-    if signing_return_code != 0:
-        logging.error("An error occurred while signing the APK")
-        sys.exit(1)
+    run_process([
+        apksigner_path,
+        "sign",
+        "--verbose",
+        "--ks", "./keystore/public.jks",
+        "--ks-pass", "pass:public",
+        "--key-pass", "pass:public",
+        "--ks-key-alias", "public",
+        "--in", output_apk,
+        "--out", signed_apk
+    ], stream=True)
 
     os.remove(output_apk)
     # release.create_github_release(app_name, source, download_files, signed_apk)
-
-    key = f"{app_name}/{signed_apk}"
-    r2.upload(signed_apk, key)
+    r2.upload(signed_apk, f"{app_name}/{signed_apk}")
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
