@@ -43,6 +43,7 @@ def download_required(source: str) -> list:
 
     for repo_info in repos_info:
         if "name" in repo_info:
+            name = repo_info["name"]
             continue
 
         user = repo_info['user']
