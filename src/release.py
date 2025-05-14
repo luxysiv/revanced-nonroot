@@ -1,6 +1,7 @@
 import os
 import re
 import json
+from sys import exit
 
 from src import (
     session,
@@ -9,48 +10,83 @@ from src import (
 )
 
 def convert_title(text):
-    pattern = re.compile(r'\b([a-z0-9]+(?:-[a-z0-9]+)*)\b', re.IGNORECASE)
-    return pattern.sub(lambda match: match.group(1).replace('-', ' ').title(), text)
+    if not text or not isinstance(text, str):
+        return text
+    return re.sub(
+        r'\b([a-z0-9]+(?:-[a-z0-9]+)*)\b',
+        lambda m: m.group(1).replace('-', ' ').title(),
+        text,
+        flags=re.IGNORECASE
+    )
 
 def extract_version(file_path):
-    if file_path:
-        base_name = os.path.splitext(os.path.basename(file_path))[0]
-        match = re.search(r'(\d+\.\d+\.\d+(-[a-z]+\.\d+)?(-release\d*)?)', base_name)
-        if match:
-            return match.group(1)
-    return 'unknown'
+    if not file_path or not isinstance(file_path, str):
+        return 'unknown'
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+    match = re.search(r'(\d+\.\d+\.\d+(-[a-z]+\.\d+)?(-release\d*)?)', base_name)
+    return match.group(1) if match else 'unknown'
 
 def create_github_release(name, patches_name, cli_name, apk_file_path):
     patchver = extract_version(patches_name)
     cliver = extract_version(cli_name)
     tag_name = f"{name}-v{patchver}"
 
-    if not apk_file_path:
-        print("APK file not found, skipping release.")
-        return
+    if not apk_file_path or not os.path.exists(apk_file_path):
+        exit(1)
 
+    # Step 1: Check for existing release with the exact tag name
     existing_release = session.get(
         f"https://api.github.com/repos/{repository}/releases/tags/{tag_name}",
-        headers={
-            "Authorization": f"token {github_token}"
-        }
+        headers={"Authorization": f"token {github_token}"}
     ).json()
 
-    if "id" in existing_release:
-        existing_release_id = existing_release["id"]
+    existing_release_id = existing_release.get("id")
 
-        existing_assets = existing_release.get('assets', [])
-        for asset in existing_assets:
+    # Step 2: Delete assets if the release exists and has the same APK
+    if existing_release_id:
+        for asset in existing_release.get('assets', []):
             if asset['name'] == os.path.basename(apk_file_path):
-                asset_id = asset['id']
-                delete_response = session.delete(
-                    f"https://api.github.com/repos/{repository}/releases/assets/{asset_id}",
-                    headers={
-                        "Authorization": f"token {github_token}"
-                    }
+                session.delete(
+                    f"https://api.github.com/repos/{repository}/releases/assets/{asset['id']}",
+                    headers={"Authorization": f"token {github_token}"}
                 )
 
-    else:
+    # Step 3: Delete old releases with the same base name and matching version suffix
+    releases = session.get(
+        f"https://api.github.com/repos/{repository}/releases",
+        headers={"Authorization": f"token {github_token}"}
+    ).json()
+
+    # Extract suffix (e.g., "-beta.1") from patchver
+    suffix_match = re.search(r'(-[a-z]+\.\d+)$', patchver)
+    current_suffix = suffix_match.group(1) if suffix_match else ''
+
+    for release in releases:
+        release_tag = release['tag_name']
+        if (
+            release_tag.startswith(f"{name}-v")
+            and release_tag != tag_name
+            and release['id'] != existing_release_id
+        ):
+            old_version = release_tag[len(name) + 2:]  # Extract version (e.g., "1.2.2-beta.1")
+            old_suffix_match = re.search(r'(-[a-z]+\.\d+)$', old_version)
+            old_suffix = old_suffix_match.group(1) if old_suffix_match else ''
+
+            # Only delete if suffixes match (or both have no suffix)
+            if old_suffix == current_suffix:
+                # Extract numeric version (e.g., "1.2.2" from "1.2.2-beta.1")
+                old_numeric = re.sub(r'(-[a-z]+\.\d+)?(-release\d*)?$', '', old_version)
+                current_numeric = re.sub(r'(-[a-z]+\.\d+)?(-release\d*)?$', '', patchver)
+                
+                # Compare numeric versions
+                if old_numeric < current_numeric:
+                    session.delete(
+                        f"https://api.github.com/repos/{repository}/releases/{release['id']}",
+                        headers={"Authorization": f"token {github_token}"}
+                    )
+
+    # Step 4: Create new release if it doesn't exist
+    if not existing_release_id:
         release_body = f"""\
 # Release Notes
 
@@ -61,11 +97,8 @@ def create_github_release(name, patches_name, cli_name, apk_file_path):
 ## Note:
 **ReVanced GmsCore** is **necessary** to work. 
 - Please **download** it from [HERE](https://github.com/revanced/gmscore/releases/latest).
-        """
-
-        name_from_json = convert_title(name)
-        release_name = f"{name_from_json} v{patchver}"
-
+"""
+        release_name = f"{convert_title(name)} v{patchver}"
         release_data = {
             "tag_name": tag_name,
             "target_commitish": "main",
@@ -80,18 +113,16 @@ def create_github_release(name, patches_name, cli_name, apk_file_path):
             },
             data=json.dumps(release_data)
         ).json()
+        existing_release_id = new_release.get("id")
 
-        existing_release_id = new_release["id"]
-
+    # Step 5: Upload APK
     upload_url_apk = f"https://uploads.github.com/repos/{repository}/releases/{existing_release_id}/assets?name={os.path.basename(apk_file_path)}"
     with open(apk_file_path, 'rb') as apk_file:
-        apk_file_content = apk_file.read()
-
-    response = session.post(
-        upload_url_apk,
-        headers={
-            "Authorization": f"token {github_token}",
-            "Content-Type": "application/vnd.android.package-archive"
-        },
-        data=apk_file_content
-    )
+        response = session.post(
+            upload_url_apk,
+            headers={
+                "Authorization": f"token {github_token}",
+                "Content-Type": "application/vnd.android.package-archive"
+            },
+            data=apk_file.read()
+        )
