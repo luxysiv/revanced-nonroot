@@ -15,58 +15,44 @@ from src import (
 def run_process(
     command: List[str],
     cwd: Optional[str] = None,
-    capture_output: bool = False,
-    capture_stderr: bool = False,
+    capture: bool = False,
+    stream: bool = False,
     silent: bool = False,
     check: bool = True,
-    shell: bool = False,
-    stream: bool = False
-) -> Optional[str | tuple[str, str] | int]:
-    if stream:
-        process = subprocess.Popen(
-            command,
-            cwd=cwd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            shell=shell
-        )
+    shell: bool = False
+) -> Optional[str]:
+    process = subprocess.Popen(
+        command,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        shell=shell
+    )
+
+    output_lines = []
+
+    try:
         for line in iter(process.stdout.readline, ''):
             if line:
-                print(line.rstrip(), flush=True)
+                if not silent:
+                    print(line.rstrip(), flush=True)
+                if capture:
+                    output_lines.append(line)
         process.stdout.close()
-        return process.wait()
-    else:
-        stdout_opt = subprocess.PIPE if capture_output else (subprocess.DEVNULL if silent else None)
-        if capture_stderr:
-            stderr_opt = subprocess.PIPE
-        elif capture_output:
-            stderr_opt = subprocess.STDOUT
-        else:
-            stderr_opt = subprocess.DEVNULL if silent else None
+        return_code = process.wait()
 
-        try:
-            result = subprocess.run(
-                command,
-                cwd=cwd,
-                stdout=stdout_opt,
-                stderr=stderr_opt,
-                text=True,
-                shell=shell
-            )
-            if capture_output and capture_stderr:
-                return result.stdout.strip(), result.stderr.strip()
-            elif capture_output:
-                return result.stdout.strip()
-            elif result.returncode != 0 and check:
-                print(f"Command failed: {' '.join(command)}", flush=True)
-                if result.stderr:
-                    print(result.stderr.strip(), flush=True)
-                exit(result.returncode)
-            return result.returncode
-        except FileNotFoundError:
-            print(f"Command not found: {command[0]}", flush=True)
-            exit(1)
+        if check and return_code != 0:
+            raise subprocess.CalledProcessError(return_code, command)
+
+        return ''.join(output_lines).strip() if capture else None
+
+    except FileNotFoundError:
+        print(f"Command not found: {command[0]}", flush=True)
+        exit(1)
+    except Exception as e:
+        print(f"Error while running command: {e}", flush=True)
+        exit(1)
 
 def run_build(app_name: str, source: str) -> str:
     download_files = downloader.download_required(source)
