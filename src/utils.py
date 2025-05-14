@@ -6,12 +6,16 @@ import json
 from typing import List, Optional
 from sys import exit
 import subprocess
+from pathlib import Path
 from urllib.parse import urlparse, unquote, parse_qs
 from src import session
 
-def find_file(files: list[str], prefix: str, suffix: str) -> str | None:
+def find_file(files: list[Path], prefix: str, suffix: str) -> Path | None:
     return next(
-        (f for f in files if f.startswith(prefix) and f.endswith(suffix)),
+        (
+            f for f in files
+            if f.name.startswith(prefix) and f.name.endswith(suffix)
+        ),
         None
     )
 
