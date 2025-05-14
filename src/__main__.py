@@ -36,23 +36,21 @@ def run_build(app_name: str, source: str) -> str:
     if not input_apk:
         logging.error("Failed to download APK from all sources")
         exit(1)
-
-    if not input_apk.endswith(".apk"):
+    elif not input_apk.endswith(".apk"):
         logging.warning("Input file is not .apk, using APKEditor to merge")
         apk_editor = downloader.download_apkeditor()
-
         utils.run_process([
             "java", "-jar", apk_editor, "m", "-i", input_apk
         ], silent=True)
 
         os.remove(input_apk)
-        apk_filename = next((f for f in glob.glob("*_merged.apk")), None)
+        merged_apk = next((f for f in glob.glob("*_merged.apk")), None)
 
-        if not apk_filename or not os.path.exists(apk_filename):
+        if not merged_apk or not os.path.exists(merged_apk):
             logging.error("Merged APK file not found")
             exit(1)
 
-        input_apk = apk_filename
+        input_apk = merged_apk
         logging.info(f"Merged APK file detected: {input_apk}")
 
     exclude_patches = []
