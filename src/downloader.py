@@ -51,6 +51,8 @@ def download_required(source: str) -> list:
 
         release = utils.detect_github_release(user, repo, tag)
         for asset in release["assets"]:
+            if asset["name"].endswith(".asc"):
+                continue
             filepath = download_resource(asset["browser_download_url"])
             downloaded_files.append(filepath)
 
