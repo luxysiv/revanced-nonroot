@@ -4,11 +4,7 @@ import logging
 from bs4 import BeautifulSoup
 from src import base_url, session
 
-def get_download_link(version: str, app_name: str) -> str:
-    conf_file_path = f'./apps/apkmirror/{app_name}.json'
-    with open(conf_file_path, 'r') as json_file:
-        config = json.load(json_file)
-    
+def get_download_link(version: str, app_name: str, config: str) -> str: 
     criteria = [config['type'], config['arch'], config['dpi']]
     url = (f"{base_url}/apk/{config['org']}/{config['name']}/"
            f"{config['name']}-{version.replace('.', '-')}-release/")
@@ -54,12 +50,7 @@ def get_download_link(version: str, app_name: str) -> str:
     return None
     
 
-def get_latest_version(app_name: str) -> str:
-    
-    conf_file_path = f'./apps/apkmirror/{app_name}.json'    
-    with open(conf_file_path, 'r') as json_file:
-        config = json.load(json_file)
-        
+def get_latest_version(app_name: str, config: str) -> str:
     url = f"{base_url}/uploads/?appcategory={config['name']}"
 
     response = session.get(url)

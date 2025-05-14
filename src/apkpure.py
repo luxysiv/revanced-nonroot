@@ -4,11 +4,7 @@ import logging
 from src import session 
 from bs4 import BeautifulSoup
       
-def get_latest_version(app_name: str) -> str:
-    conf_file_path = f'./apps/apkpure/{app_name}.json'   
-    with open(conf_file_path, 'r') as json_file:
-        config = json.load(json_file)
-    
+def get_latest_version(app_name: str, config: str) -> str: 
     url = f"https://apkpure.net/{config['name']}/{config['package']}/versions"
 
     response = session.get(url)
@@ -25,11 +21,7 @@ def get_latest_version(app_name: str) -> str:
             
     return None
 
-def get_download_link(version: str, app_name: str) ->str:
-    conf_file_path = f'./apps/apkpure/{app_name}.json'   
-    with open(conf_file_path, 'r') as json_file:
-        config = json.load(json_file)
-    
+def get_download_link(version: str, app_name: str, config: str) ->str:
     url = f"https://apkpure.net/{config['name']}/{config['package']}/download/{version}"
 
     response = session.get(url)

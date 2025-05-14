@@ -1,14 +1,9 @@
-import json
 import logging 
 
 from src import session 
 from bs4 import BeautifulSoup
 
-def get_latest_version(app_name: str) -> str:
-    conf_file_path = f'./apps/uptodown/{app_name}.json'
-    with open(conf_file_path, 'r') as json_file:
-        config = json.load(json_file)
-
+def get_latest_version(app_name: str, config: str) -> str:
     url = f"https://{config['name']}.en.uptodown.com/android/versions"
 
     response = session.get(url)
@@ -22,11 +17,7 @@ def get_latest_version(app_name: str) -> str:
     
     return highest_version
 
-def get_download_link(version: str, app_name: str) -> str:
-    # Load configuration
-    with open(f'./apps/uptodown/{app_name}.json', 'r') as file:
-        config = json.load(file)
-
+def get_download_link(version: str, app_name: str, config: str) -> str:
     base_url = f"https://{config['name']}.en.uptodown.com/android"
     response = session.get(f"{base_url}/versions")
     response.raise_for_status()
