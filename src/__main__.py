@@ -1,8 +1,9 @@
-import os
 import json
 import glob
 import logging
 from sys import exit
+from pathlib import Path
+from os import getenv
 from src import (
     r2,
     utils,
@@ -12,13 +13,11 @@ from src import (
 
 def run_build(app_name: str, source: str) -> str:
     download_files, name = downloader.download_required(source)
-    find_file = lambda prefix, ext: next(
-        (f for f in download_files if f.startswith(prefix) and f.endswith(ext)),
-        None
-    )
+    def find_file_by_prefix_suffix(prefix, ext):
+        return next((f for f in download_files if f.startswith(prefix) and f.endswith(ext)), None)
 
-    revanced_cli = find_file('./revanced-cli', '.jar')
-    revanced_patches = find_file('./patches', '.rvp')
+    revanced_cli = find_file_by_prefix_suffix('./revanced-cli', '.jar')
+    revanced_patches = find_file_by_prefix_suffix('./patches', '.rvp')
 
     download_methods = [
         downloader.download_apkmirror,
@@ -43,46 +42,45 @@ def run_build(app_name: str, source: str) -> str:
             "java", "-jar", apk_editor, "m", "-i", input_apk
         ], silent=True)
 
-        os.remove(input_apk)
-        merged_apk = next((f for f in glob.glob("*_merged.apk")), None)
+        Path(input_apk).unlink(missing_ok=True)
+        merged_apk = next((Path(f) for f in glob.glob("*_merged.apk")), None)
 
-        if not merged_apk or not os.path.exists(merged_apk):
+        if not merged_apk or not merged_apk.exists():
             logging.error("Merged APK file not found")
             exit(1)
 
-        input_apk = merged_apk
+        input_apk = str(merged_apk)
         logging.info(f"Merged APK file detected: {input_apk}")
 
     exclude_patches = []
     include_patches = []
 
-    patches_path = f'./patches/{app_name}-{source}.txt'
-    if os.path.exists(patches_path):
-        with open(patches_path, 'r') as patches_file:
+    patches_path = Path(f'./patches/{app_name}-{source}.txt')
+    if patches_path.exists():
+        with patches_path.open('r') as patches_file:
             for line in patches_file:
                 line = line.strip()
                 if line.startswith('-'):
-                    exclude_patches.append("-d")
-                    exclude_patches.append(line[1:].strip())
+                    exclude_patches.extend(["-d", line[1:].strip()])
                 elif line.startswith('+'):
-                    include_patches.append("-e")
-                    include_patches.append(line[1:].strip())
+                    include_patches.extend(["-e", line[1:].strip()])
 
     utils.run_process([
         "zip", "--delete", input_apk, "lib/x86/*", "lib/x86_64/*"
     ], silent=True, check=False)
 
-    output_apk = f"{app_name}-patch-v{version}.apk"
+    output_apk = Path(f"{app_name}-patch-v{version}.apk")
 
     utils.run_process([
         "java", "-jar", revanced_cli,
         "patch", "--patches", revanced_patches,
-        "--out", output_apk, input_apk,
+        "--out", str(output_apk), input_apk,
         *exclude_patches, *include_patches
     ], stream=True)
 
-    os.remove(input_apk)
-    signed_apk = f"{app_name}-{name}-v{version}.apk"
+    Path(input_apk).unlink(missing_ok=True)
+
+    signed_apk = Path(f"{app_name}-{name}-v{version}.apk")
 
     apksigner = utils.find_apksigner()
     if not apksigner:
@@ -94,16 +92,16 @@ def run_build(app_name: str, source: str) -> str:
         "--ks-pass", "pass:public",
         "--key-pass", "pass:public",
         "--ks-key-alias", "public",
-        "--in", output_apk, "--out", signed_apk
+        "--in", str(output_apk), "--out", str(signed_apk)
     ], stream=True)
 
-    os.remove(output_apk)
+    output_apk.unlink(missing_ok=True)
     # release.create_github_release(name, revanced_patches, revanced_cli, signed_apk)
-    r2.upload(signed_apk, f"{app_name}/{signed_apk}")
+    r2.upload(str(signed_apk), f"{app_name}/{signed_apk.name}")
 
 if __name__ == "__main__":
-    app_name = os.getenv("APP_NAME")
-    source = os.getenv("SOURCE")
+    app_name = getenv("APP_NAME")
+    source = getenv("SOURCE")
 
     if not app_name or not source:
         logging.error("APP_NAME and SOURCE environment variables must be set")
