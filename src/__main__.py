@@ -32,8 +32,8 @@ def run_process(
             shell=shell
         )
         for line in iter(process.stdout.readline, ''):
-            if line.strip():
-                logging.info(line.strip())
+            if line:
+                print(line.rstrip(), flush=True)
         process.stdout.close()
         return process.wait()
     else:
@@ -59,13 +59,13 @@ def run_process(
             elif capture_output:
                 return result.stdout.strip()
             elif result.returncode != 0 and check:
-                logging.error(f"Command failed: {' '.join(command)}")
+                print(f"Command failed: {' '.join(command)}", flush=True)
                 if result.stderr:
-                    logging.error(result.stderr.strip())
+                    print(result.stderr.strip(), flush=True)
                 exit(result.returncode)
             return result.returncode
         except FileNotFoundError:
-            logging.error(f"Command not found: {command[0]}")
+            print(f"Command not found: {command[0]}", flush=True)
             exit(1)
 
 def run_build(app_name: str, source: str) -> str:
