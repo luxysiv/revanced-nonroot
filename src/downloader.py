@@ -50,7 +50,7 @@ def download_required(source: str) -> list:
         tag = repo_info['tag']
 
         release = utils.detect_github_release(user, repo, tag)
-        for asset in release.get("assets", []):
+        for asset in release["assets"]:
             filepath = download_resource(asset["browser_download_url"])
             downloaded_files.append(filepath)
 
@@ -92,9 +92,8 @@ def download_uptodown(app_name: str, cli: str, patches: str) -> tuple[str, str]:
 
 def download_apkeditor() -> str:
     release = utils.detect_github_release("REAndroid", "APKEditor", "latest")
-    assets = release.get("assets", [])
 
-    for asset in assets:
+    for asset in release["assets"]:
         if asset["name"].startswith("APKEditor") and asset["name"].endswith(".jar"):
             return download_resource(asset["browser_download_url"])
 
