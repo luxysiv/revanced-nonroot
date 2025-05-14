@@ -9,6 +9,12 @@ import subprocess
 from urllib.parse import urlparse, unquote, parse_qs
 from src import session
 
+def find_file(files: list[str], prefix: str, suffix: str) -> str | None:
+    return next(
+        (f for f in files if f.startswith(prefix) and f.endswith(suffix)),
+        None
+    )
+
 def find_apksigner() -> Optional[str]:
     sdk_root = os.environ.get('ANDROID_SDK_ROOT')
     if not sdk_root:
