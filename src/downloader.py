@@ -34,18 +34,15 @@ def download_resource(url: str, name: str = None) -> str:
 
     return filepath
 
-def download_required(source: str) -> list:
-    downloaded_files = []
+def download_required(source: str) -> tuple[list, str]:
     source_path = f'./sources/{source}.json'
-
     with open(source_path) as json_file:
         repos_info = json.load(json_file)
 
-    for repo_info in repos_info:
-        if "name" in repo_info:
-            name = repo_info["name"]
-            continue
+    name = repos_info[0]["name"]
+    downloaded_files = []
 
+    for repo_info in repos_info[1:]:
         user = repo_info['user']
         repo = repo_info['repo']
         tag = repo_info['tag']
@@ -57,7 +54,7 @@ def download_required(source: str) -> list:
             filepath = download_resource(asset["browser_download_url"])
             downloaded_files.append(filepath)
 
-    return downloaded_files
+    return downloaded_files, name
 
 def download_platform(app_name: str, platform: str, cli: str, patches: str) -> tuple[str, str]:
     try:
