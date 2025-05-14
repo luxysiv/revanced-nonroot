@@ -12,7 +12,7 @@ from src import (
 )
 
 def run_build(app_name: str, source: str) -> str:
-    download_files = downloader.download_required(source)
+    download_files, name = downloader.download_required(source)
     find_file = lambda prefix, ext: next(
         (f for f in download_files if f.startswith(prefix) and f.endswith(ext)),
         None
@@ -74,10 +74,6 @@ def run_build(app_name: str, source: str) -> str:
     utils.run_process([
         "zip", "--delete", input_apk, "lib/x86/*", "lib/x86_64/*"
     ], silent=True, check=False)
-
-    with open(f'./sources/{source}.json', 'r') as json_file:
-        info = json.load(json_file)
-    name = info[0].get("name", "")
 
     output_apk = f"{app_name}-patch-v{version}.apk"
 
