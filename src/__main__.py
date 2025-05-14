@@ -101,7 +101,7 @@ def run_build(app_name: str, source: str) -> str:
     ], stream=True)
 
     os.remove(output_apk)
-    # release.create_github_release(app_name, source, download_files, signed_apk)
+    # release.create_github_release(name, revanced_patches, revanced_cli, signed_apk)
     r2.upload(signed_apk, f"{app_name}/{signed_apk}")
 
 if __name__ == "__main__":
