@@ -109,6 +109,6 @@ if __name__ == "__main__":
 
     if not app_name or not source:
         logging.error("APP_NAME and SOURCE environment variables must be set")
-        sys.exit(1)
+        exit(1)
 
     run_build(app_name, source)
