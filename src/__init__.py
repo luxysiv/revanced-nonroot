@@ -12,8 +12,6 @@ session.headers.update({
 logging.basicConfig(
   level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
 )
-# Global version
-version = {}
 
 github_token = os.getenv('GITHUB_TOKEN')
 repository = os.getenv('GITHUB_REPOSITORY')

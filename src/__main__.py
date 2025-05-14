@@ -3,61 +3,18 @@ import sys
 import json
 import glob
 import logging
-import subprocess
-from typing import List, Optional
 from sys import exit
 from src import (
     r2,
+    utils,
     release,
     downloader
 )
 
-def run_process(
-    command: List[str],
-    cwd: Optional[str] = None,
-    capture: bool = False,
-    stream: bool = False,
-    silent: bool = False,
-    check: bool = True,
-    shell: bool = False
-) -> Optional[str]:
-    process = subprocess.Popen(
-        command,
-        cwd=cwd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        shell=shell
-    )
-
-    output_lines = []
-
-    try:
-        for line in iter(process.stdout.readline, ''):
-            if line:
-                if not silent:
-                    print(line.rstrip(), flush=True)
-                if capture:
-                    output_lines.append(line)
-        process.stdout.close()
-        return_code = process.wait()
-
-        if check and return_code != 0:
-            raise subprocess.CalledProcessError(return_code, command)
-
-        return ''.join(output_lines).strip() if capture else None
-
-    except FileNotFoundError:
-        print(f"Command not found: {command[0]}", flush=True)
-        exit(1)
-    except Exception as e:
-        print(f"Error while running command: {e}", flush=True)
-        exit(1)
-
 def run_build(app_name: str, source: str) -> str:
     download_files = downloader.download_required(source)
     find_file = lambda prefix, ext: next(
-        (file for file in download_files if file.startswith(prefix) and file.endswith(ext)),
+        (f for f in download_files if f.startswith(prefix) and f.endswith(ext)),
         None
     )
 
@@ -85,7 +42,9 @@ def run_build(app_name: str, source: str) -> str:
         logging.warning("Input file is not .apk, using APKEditor to merge")
         apk_editor = downloader.download_apkeditor()
 
-        run_process(["java", "-jar", apk_editor, "m", "-i", input_apk], silent=True)
+        utils.run_process([
+            "java", "-jar", apk_editor, "m", "-i", input_apk
+        ], silent=True)
 
         os.remove(input_apk)
         apk_filename = next((f for f in glob.glob("*_merged.apk")), None)
@@ -112,12 +71,8 @@ def run_build(app_name: str, source: str) -> str:
                     include_patches.append("-e")
                     include_patches.append(line[1:].strip())
 
-    run_process([
-        "zip",
-        "--delete",
-        input_apk,
-        "lib/x86/*",
-        "lib/x86_64/*"
+    utils.run_process([
+        "zip", "--delete", input_apk, "lib/x86/*", "lib/x86_64/*"
     ], silent=True, check=False)
 
     with open(f'./sources/{source}.json', 'r') as json_file:
@@ -126,43 +81,32 @@ def run_build(app_name: str, source: str) -> str:
 
     output_apk = f"{app_name}-patch-v{version}.apk"
 
-    run_process([
-        "java",
-        "-jar",
-        revanced_cli,
-        "patch",
-        "--patches",
-        revanced_patches,
-        "--out",
-        output_apk,
-        input_apk,
-        *exclude_patches,
-        *include_patches
+    utils.run_process([
+        "java", "-jar", revanced_cli,
+        "patch", "--patches", revanced_patches,
+        "--out", output_apk, input_apk,
+        *exclude_patches, *include_patches
     ], stream=True)
 
     os.remove(input_apk)
     signed_apk = f"{app_name}-{name}-v{version}.apk"
 
-    apksigner_path = max(
-        glob.glob(os.path.join(os.environ.get('ANDROID_SDK_ROOT'), 'build-tools', '*/apksigner')),
-        key=os.path.getctime
-    )
+    apksigner = utils.find_apksigner()
+    if not apksigner:
+        exit(1)
 
-    run_process([
-        apksigner_path,
-        "sign",
-        "--verbose",
+    utils.run_process([
+        apksigner, "sign", "--verbose",
         "--ks", "./keystore/public.jks",
         "--ks-pass", "pass:public",
         "--key-pass", "pass:public",
         "--ks-key-alias", "public",
-        "--in", output_apk,
-        "--out", signed_apk
+        "--in", output_apk, "--out", signed_apk
     ], stream=True)
 
     os.remove(output_apk)
     # release.create_github_release(app_name, source, download_files, signed_apk)
-    r2.upload(signed_apk, f"{app_name}/{signed_apk}")
+    # r2.upload(signed_apk, f"{app_name}/{signed_apk}")
 
 if __name__ == "__main__":
     app_name = os.getenv("APP_NAME")
