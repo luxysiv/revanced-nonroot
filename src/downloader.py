@@ -52,7 +52,7 @@ def download_required(source: str) -> tuple[list, str]:
             if asset["name"].endswith(".asc"):
                 continue
             filepath = download_resource(asset["browser_download_url"])
-            downloaded_files.append(filepath)
+            downloaded_files.append(Path(filepath))
 
     return downloaded_files, name
 
