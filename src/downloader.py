@@ -65,7 +65,7 @@ def download_platform(app_name: str, platform: str, cli: str, patches: str) -> t
         with config_path.open() as json_file:
             config = json.load(json_file)
 
-        ver = config.get('version')
+        ver = config["version"]
         if not ver:
             ver = utils.get_supported_version(config['package'], cli, patches)
 
