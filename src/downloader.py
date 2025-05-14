@@ -14,7 +14,6 @@ def download_resource(url: str, name: str = None) -> Path:
         res.raise_for_status()
         final_url = res.url
 
-        # Determine filename
         if not name:
             name = utils.extract_filename(res, fallback_url=final_url)
 
@@ -22,19 +21,19 @@ def download_resource(url: str, name: str = None) -> Path:
         total_size = int(res.headers.get('content-length', 0))
         downloaded_size = 0
 
-        with open(filepath, "wb") as file:
+        with filepath.open("wb") as file:
             for chunk in res.iter_content(chunk_size=8192):
                 if chunk:
                     file.write(chunk)
                     downloaded_size += len(chunk)
 
         logging.info(
-            f"URL: {final_url} [{downloaded_size}/{total_size}] -> \"{name}\" [1]"
+            f"URL: {final_url} [{downloaded_size}/{total_size}] -> \"{filepath}\" [1]"
         )
 
     return filepath
 
-def download_required(source: str) -> tuple[list, str]:
+def download_required(source: str) -> tuple[list[Path], str]:
     source_path = Path("sources") / f"{source}.json"
     with source_path.open() as json_file:
         repos_info = json.load(json_file)
@@ -52,20 +51,20 @@ def download_required(source: str) -> tuple[list, str]:
             if asset["name"].endswith(".asc"):
                 continue
             filepath = download_resource(asset["browser_download_url"])
-            downloaded_files.append(Path(filepath))
+            downloaded_files.append(filepath)
 
     return downloaded_files, name
 
-def download_platform(app_name: str, platform: str, cli: str, patches: str) -> tuple[Path, str]:
+def download_platform(app_name: str, platform: str, cli: str, patches: str) -> tuple[Path | None, str | None]:
     try:
-        config_path = Path(f'./apps/{platform}/{app_name}.json')
+        config_path = Path("apps") / platform / f"{app_name}.json"
         if not config_path.exists():
             raise FileNotFoundError(f"Config file not found: {config_path}")
 
         with config_path.open() as json_file:
             config = json.load(json_file)
 
-        version = config["version"] or utils.get_supported_version(config['package'], cli, patches)
+        version = config.get("version") or utils.get_supported_version(config['package'], cli, patches)
 
         platform_module = globals()[platform]
         version = version or platform_module.get_latest_version(app_name, config)
@@ -78,16 +77,16 @@ def download_platform(app_name: str, platform: str, cli: str, patches: str) -> t
         logging.error(f"Unexpected error: {e}")
         return None, None
 
-def download_apkmirror(app_name: str, cli: str, patches: str) -> tuple[str, str]:
+def download_apkmirror(app_name: str, cli: str, patches: str) -> tuple[Path | None, str | None]:
     return download_platform(app_name, "apkmirror", cli, patches)
 
-def download_apkpure(app_name: str, cli: str, patches: str) -> tuple[str, str]:
+def download_apkpure(app_name: str, cli: str, patches: str) -> tuple[Path | None, str | None]:
     return download_platform(app_name, "apkpure", cli, patches)
 
-def download_uptodown(app_name: str, cli: str, patches: str) -> tuple[str, str]:
+def download_uptodown(app_name: str, cli: str, patches: str) -> tuple[Path | None, str | None]:
     return download_platform(app_name, "uptodown", cli, patches)
 
-def download_apkeditor() -> str:
+def download_apkeditor() -> Path:
     release = utils.detect_github_release("REAndroid", "APKEditor", "latest")
 
     for asset in release["assets"]:

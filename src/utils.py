@@ -1,4 +1,3 @@
-import os
 import re
 import logging
 import cgi
@@ -12,10 +11,7 @@ from src import session
 
 def find_file(files: list[Path], prefix: str, suffix: str) -> Path | None:
     return next(
-        (
-            f for f in files
-            if f.name.startswith(prefix) and f.name.endswith(suffix)
-        ),
+        (f for f in files if f.name.startswith(prefix) and f.name.endswith(suffix)),
         None
     )
 
@@ -35,10 +31,10 @@ def find_apksigner() -> str | None:
 
     logging.error("No apksigner found in build-tools")
     return None
-
+    
 def run_process(
     command: List[str],
-    cwd: Optional[str] = None,
+    cwd: Optional[Path] = None,
     capture: bool = False,
     stream: bool = False,
     silent: bool = False,
@@ -47,7 +43,7 @@ def run_process(
 ) -> Optional[str]:
     process = subprocess.Popen(
         command,
-        cwd=cwd,
+        cwd=str(cwd) if cwd else None,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -78,7 +74,7 @@ def run_process(
         print(f"Error while running command: {e}", flush=True)
         exit(1)
 
-def normalize_version(version: str) -> str:
+def normalize_version(version: str) -> list[int]:
     parts = version.split('.')
     normalized = []
     for part in parts:
@@ -89,7 +85,7 @@ def normalize_version(version: str) -> str:
             normalized.append(0)
     return normalized
 
-def get_highest_version(versions: str) -> str:
+def get_highest_version(versions: list[str]) -> str | None:
     if not versions:
         return None
     highest_version = versions[0]
@@ -97,7 +93,7 @@ def get_highest_version(versions: str) -> str:
         if normalize_version(v) > normalize_version(highest_version):
             highest_version = v
     return highest_version
-    
+
 def get_supported_version(package_name: str, cli: str, patches: str) -> Optional[str]:
     output = run_process([
         'java', '-jar', cli,
@@ -117,7 +113,7 @@ def get_supported_version(package_name: str, cli: str, patches: str) -> Optional
 
     versions = []
     for line in lines[2:]:
-        version, _, rest = line.partition(' ')
+        version, _, _ = line.partition(' ')
         version = version.strip()
         if version and 'Any' not in line:
             versions.append(version)
@@ -149,7 +145,7 @@ def extract_filename(response, fallback_url=None) -> str:
 
     # 3. Fallback to URL path
     path = urlparse(fallback_url or response.url).path
-    return unquote(os.path.basename(path))
+    return unquote(Path(path).name)
 
 def detect_github_release(user: str, repo: str, tag: str) -> dict:
     if tag == "latest":
@@ -173,7 +169,7 @@ def detect_github_release(user: str, repo: str, tag: str) -> dict:
             if not devs:
                 raise ValueError(f"No dev release found for {user}/{repo}")
             release = max(devs, key=lambda x: x['created_at'])
-        else:  # "prerelease"
+        else:
             pres = [r for r in releases if r.get('prerelease')]
             if not pres:
                 raise ValueError(f"No prerelease found for {user}/{repo}")
