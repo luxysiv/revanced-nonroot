@@ -19,24 +19,21 @@ def find_file(files: list[Path], prefix: str, suffix: str) -> Path | None:
         None
     )
 
-def find_apksigner() -> Optional[str]:
-    sdk_root = os.environ.get('ANDROID_SDK_ROOT')
-    if not sdk_root:
-        logging.error("ANDROID_SDK_ROOT is not set")
+def find_apksigner() -> str | None:
+    sdk_root = Path("/usr/local/lib/android/sdk")
+    build_tools_dir = sdk_root / "build-tools"
+
+    if not build_tools_dir.exists():
+        logging.error(f"No build-tools found at: {build_tools_dir}")
         return None
 
-    build_tools_path = os.path.join(sdk_root, 'build-tools')
-    if not os.path.isdir(build_tools_path):
-        logging.error("No build-tools directory found in ANDROID_SDK_ROOT")
-        return None
+    versions = sorted(build_tools_dir.iterdir(), reverse=True)
+    for version_dir in versions:
+        apksigner_path = version_dir / "apksigner"
+        if apksigner_path.exists() and apksigner_path.is_file():
+            return str(apksigner_path)
 
-    versions = sorted(os.listdir(build_tools_path), reverse=True)
-    for version in versions:
-        path = os.path.join(build_tools_path, version, 'apksigner')
-        if os.path.isfile(path):
-            return path
-
-    logging.error("apksigner not found in any build-tools version")
+    logging.error("No apksigner found in build-tools")
     return None
 
 def run_process(
