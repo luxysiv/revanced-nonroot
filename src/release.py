@@ -20,22 +20,9 @@ def extract_version(file_path):
             return match.group(1)
     return 'unknown'
 
-def create_github_release(app_name, source, download_files, apk_file_path):
-    source_path = f'./sources/{source}.json'
-    with open(source_path, 'r') as json_file:
-        info = json.load(json_file)
-
-    name = info[0].get("name", "")
-    
-    find_file = lambda prefix, ext: next(
-        (file for file in download_files if file.startswith(prefix) and file.endswith(ext)),
-        None
-    )
-    cli_file_path = find_file('./revanced-cli', '.jar')
-    patch_file_path = find_file('./patches', '.rvp')
-
-    patchver = extract_version(patch_file_path)
-    cliver = extract_version(cli_file_path)
+def create_github_release(name, patches_name, cli_name, apk_file_path):
+    patchver = extract_version(patches_name)
+    cliver = extract_version(cli_name)
     tag_name = f"{name}-v{patchver}"
 
     if not apk_file_path:
