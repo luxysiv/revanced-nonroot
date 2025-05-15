@@ -93,8 +93,8 @@ def run_build(app_name: str, source: str) -> str:
     ], stream=True)
 
     output_apk.unlink(missing_ok=True)
-    release.create_github_release(name, revanced_patches, revanced_cli, signed_apk)
-    # r2.upload(str(signed_apk), f"{app_name}/{signed_apk.name}")
+    # release.create_github_release(name, revanced_patches, revanced_cli, signed_apk)
+    r2.upload(str(signed_apk), f"{app_name}/{signed_apk.name}")
 
 if __name__ == "__main__":
     app_name = getenv("APP_NAME")
