@@ -1,7 +1,7 @@
-import os
 import re
 import json
 from sys import exit
+from pathlib import Path
 
 from src import (
     session,
@@ -20,9 +20,10 @@ def convert_title(text):
     )
 
 def extract_version(file_path):
-    if not file_path or not isinstance(file_path, str):
+    if not file_path:
         return 'unknown'
-    base_name = os.path.splitext(os.path.basename(file_path))[0]
+    path = Path(file_path)
+    base_name = path.stem
     match = re.search(r'(\d+\.\d+\.\d+(-[a-z]+\.\d+)?(-release\d*)?)', base_name)
     return match.group(1) if match else 'unknown'
 
@@ -31,7 +32,8 @@ def create_github_release(name, patches_name, cli_name, apk_file_path):
     cliver = extract_version(cli_name)
     tag_name = f"{name}-v{patchver}"
 
-    if not apk_file_path or not os.path.exists(apk_file_path):
+    apk_path = Path(apk_file_path)
+    if not apk_path.exists():
         exit(1)
 
     # Step 1: Check for existing release with the exact tag name
@@ -45,7 +47,7 @@ def create_github_release(name, patches_name, cli_name, apk_file_path):
     # Step 2: Delete assets if the release exists and has the same APK
     if existing_release_id:
         for asset in existing_release.get('assets', []):
-            if asset['name'] == os.path.basename(apk_file_path):
+            if asset['name'] == apk_path.name:
                 session.delete(
                     f"https://api.github.com/repos/{repository}/releases/assets/{asset['id']}",
                     headers={"Authorization": f"token {github_token}"}
@@ -57,7 +59,6 @@ def create_github_release(name, patches_name, cli_name, apk_file_path):
         headers={"Authorization": f"token {github_token}"}
     ).json()
 
-    # Extract suffix (e.g., "-beta.1") from patchver
     suffix_match = re.search(r'(-[a-z]+\.\d+)$', patchver)
     current_suffix = suffix_match.group(1) if suffix_match else ''
 
@@ -68,17 +69,13 @@ def create_github_release(name, patches_name, cli_name, apk_file_path):
             and release_tag != tag_name
             and release['id'] != existing_release_id
         ):
-            old_version = release_tag[len(name) + 2:]  # Extract version (e.g., "1.2.2-beta.1")
+            old_version = release_tag[len(name) + 2:]
             old_suffix_match = re.search(r'(-[a-z]+\.\d+)$', old_version)
             old_suffix = old_suffix_match.group(1) if old_suffix_match else ''
 
-            # Only delete if suffixes match (or both have no suffix)
             if old_suffix == current_suffix:
-                # Extract numeric version (e.g., "1.2.2" from "1.2.2-beta.1")
                 old_numeric = re.sub(r'(-[a-z]+\.\d+)?(-release\d*)?$', '', old_version)
                 current_numeric = re.sub(r'(-[a-z]+\.\d+)?(-release\d*)?$', '', patchver)
-                
-                # Compare numeric versions
                 if old_numeric < current_numeric:
                     session.delete(
                         f"https://api.github.com/repos/{repository}/releases/{release['id']}",
@@ -116,13 +113,13 @@ def create_github_release(name, patches_name, cli_name, apk_file_path):
         existing_release_id = new_release.get("id")
 
     # Step 5: Upload APK
-    upload_url_apk = f"https://uploads.github.com/repos/{repository}/releases/{existing_release_id}/assets?name={os.path.basename(apk_file_path)}"
-    with open(apk_file_path, 'rb') as apk_file:
-        response = session.post(
+    upload_url_apk = f"https://uploads.github.com/repos/{repository}/releases/{existing_release_id}/assets?name={apk_path.name}"
+    with apk_path.open('rb') as apk_file:
+        session.post(
             upload_url_apk,
             headers={
                 "Authorization": f"token {github_token}",
                 "Content-Type": "application/vnd.android.package-archive"
             },
             data=apk_file.read()
-        )
+    )
