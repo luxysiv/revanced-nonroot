@@ -29,25 +29,26 @@ def run_build(app_name: str, source: str) -> str:
         if input_apk:
             break
 
-    if not input_apk:
-        logging.error("Failed to download APK from all sources")
-        exit(1)
-    elif input_apk.suffix != ".apk":
+    if input_apk.suffix != ".apk":
         logging.warning("Input file is not .apk, using APKEditor to merge")
         apk_editor = downloader.download_apkeditor()
+
+        merged_apk = input_apk.with_stem(f"{input_apk.stem}_merged")
+
         utils.run_process([
-            "java", "-jar", apk_editor, "m", "-i", str(input_apk)
+            "java", "-jar", apk_editor, "m",
+            "-i", str(input_apk),
+            "-o", str(merged_apk)
         ], silent=True)
 
         input_apk.unlink(missing_ok=True)
-        merged_apk = next(Path(".").glob("*_merged.apk"), None)
 
-        if not merged_apk or not merged_apk.exists():
+        if not merged_apk.exists():
             logging.error("Merged APK file not found")
             exit(1)
 
         input_apk = merged_apk
-        logging.info(f"Merged APK file detected: {input_apk}")
+        logging.info(f"Merged APK file generated: {input_apk}")
 
     exclude_patches = []
     include_patches = []
