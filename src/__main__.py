@@ -33,7 +33,7 @@ def run_build(app_name: str, source: str) -> str:
         logging.warning("Input file is not .apk, using APKEditor to merge")
         apk_editor = downloader.download_apkeditor()
 
-        merged_apk = input_apk.with_stem(f"{input_apk.stem}_merged")
+        merged_apk = input_apk.with_suffix(".apk")
 
         utils.run_process([
             "java", "-jar", apk_editor, "m",
