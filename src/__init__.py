@@ -2,6 +2,7 @@ import os
 import random
 import time
 import requests
+import logging 
 
 user_agents = [
     # Chrome Windows/Mac/Linux
