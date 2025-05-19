@@ -18,8 +18,8 @@ def run_build(app_name: str, source: str) -> str:
 
     download_methods = [
         downloader.download_apkmirror,
-        downloader.download_uptodown,
-        downloader.download_apkpure
+        downloader.download_apkpure,
+        downloader.download_uptodown
     ]
 
     input_apk = None
