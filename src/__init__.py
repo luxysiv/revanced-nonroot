@@ -3,64 +3,98 @@ import logging
 import random
 import requests
 
-user_agents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 11.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13.5; rv:125.0) Gecko/20100101 Firefox/125.0',
-    'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
-    
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
-    
-    'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.93 Mobile Safari/537.36',
-    'Mozilla/5.0 (Linux; Android 13; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.93 Mobile Safari/537.36',
-    'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.93 Mobile Safari/537.36',
-    'Mozilla/5.0 (Linux; Android 11; Redmi Note 10 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.93 Mobile Safari/537.36',
-    
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-    'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-    'Mozilla/5.0 (iPod touch; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-    
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 OPR/90.0.4480.54',
-    'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Vivaldi/6.5.3206.47'
+# --- Auto Generate User-Agent ---
+os_platforms = {
+    "Windows": [
+        "Windows NT 10.0; Win64; x64",
+        "Windows NT 11.0; Win64; x64",
+        "Windows NT 10.0; WOW64"
+    ],
+    "macOS": [
+        "Macintosh; Intel Mac OS X 13_5",
+        "Macintosh; Apple M1 Mac OS X 13_5"
+    ],
+    "Linux": [
+        "X11; Linux x86_64",
+        "X11; Ubuntu; Linux x86_64"
+    ],
+    "Android": [
+        "Linux; Android 14; Pixel 8 Pro",
+        "Linux; Android 13; SM-G998B",
+        "Linux; Android 12; SM-G991B",
+        "Linux; Android 13; SM-S918B"
+    ],
+    "iOS": [
+        "iPhone; CPU iPhone OS 17_5 like Mac OS X",
+        "iPad; CPU OS 17_5 like Mac OS X",
+        "iPod touch; CPU iPhone OS 17_5 like Mac OS X"
+    ]
+}
 
-    'Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0',
-    'Mozilla/5.0 (Android 12; Mobile; rv:124.0) Gecko/124.0 Firefox/124.0',
-    'Mozilla/5.0 (Android 11; Mobile; rv:123.0) Gecko/123.0 Firefox/123.0',
-    
-    'Mozilla/5.0 (Android 13; Tablet; rv:125.0) Gecko/125.0 Firefox/125.0',
-    
-    'Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0 Focus',
-    'Mozilla/5.0 (Android 13; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0 Klar',
-    
-    'Mozilla/5.0 (Android 13; Mobile; rv:126.0) Gecko/126.0 Firefox/126.0 Nightly'
-]
+browser_by_os = {
+    "Windows": ["Chrome", "Firefox", "Edge", "Opera", "Vivaldi", "Brave"],
+    "macOS": ["Chrome", "Firefox", "Safari", "Brave"],
+    "Linux": ["Chrome", "Firefox", "Vivaldi", "Brave"],
+    "Android": ["Chrome", "Firefox", "Samsung Browser", "Brave"],
+    "iOS": ["Safari", "Chrome"]
+}
 
-random_user_agent = random.choice(user_agents)
+browser_templates = {
+    "Chrome": "Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver} Safari/537.36",
+    "Edge": "Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver} Safari/537.36 Edg/{ver}",
+    "Opera": "Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver} Safari/537.36 OPR/{ver}",
+    "Vivaldi": "Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver} Safari/537.36 Vivaldi/{ver}",
+    "Brave": "Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver} Safari/537.36 Brave/{ver}",
+    "Firefox": "Mozilla/5.0 ({platform}; rv:{ver}) Gecko/20100101 Firefox/{ver}",
+    "Samsung Browser": "Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/{ver} Chrome/{ver} Safari/537.36",
+    "Firefox Focus": "Mozilla/5.0 ({platform}; Mobile; rv:{ver}) Gecko/{ver} Firefox/{ver} Focus",
+    "Firefox Klar": "Mozilla/5.0 ({platform}; Mobile; rv:{ver}) Gecko/{ver} Firefox/{ver} Klar",
+    "Firefox Nightly": "Mozilla/5.0 ({platform}; Mobile; rv:{ver}) Gecko/{ver} Firefox/{ver} Nightly",
+    "Safari": "Mozilla/5.0 ({platform}) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/{ver} Mobile/15E148 Safari/604.1"
+}
 
-base_url = "https://www.apkmirror.com"
+
+def random_version(browser):
+    if browser in ["Chrome", "Edge", "Opera", "Vivaldi", "Brave"]:
+        return f"{random.randint(120, 126)}.0.{random.randint(6000, 6399)}.{random.randint(50, 99)}"
+    elif browser == "Samsung Browser":
+        return f"{random.randint(20, 23)}.0"
+    elif "Firefox" in browser:
+        return f"{random.randint(122, 126)}.{random.randint(0, 9)}"  # Firefox 126.5
+    elif browser == "Safari":
+        return f"{random.randint(16, 17)}.{random.randint(0, 6)}"
+    else:
+        return "1.0"
+
+
+def generate_user_agent():
+    os_name = random.choice(list(os_platforms.keys()))
+    platform = random.choice(os_platforms[os_name])
+    browser = random.choice(browser_by_os[os_name])
+    version = random_version(browser)
+    template = browser_templates[browser]
+    return template.format(platform=platform, ver=version)
+
+# --- Requests Session with Random User-Agent ---
 session = requests.Session()
 session.headers.update({
-    'User-Agent': random_user_agent
+    'User-Agent': generate_user_agent()
 })
 
-# Logging Level
+# Logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
+# Env Vars
 github_token = os.getenv('GITHUB_TOKEN')
 repository = os.getenv('GITHUB_REPOSITORY')
 endpoint_url = os.getenv('ENDPOINT_URL')
 access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
 secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 bucket_name = os.getenv('BUCKET_NAME')
+
+# APKmirror base url
+base_url = "https://www.apkmirror.com"
