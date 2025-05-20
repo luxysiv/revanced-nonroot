@@ -23,7 +23,7 @@
     {
         "user": "revanced",
         "repo": "revanced-cli",
-        "tag": "latest" // Use prerelease, dev or blank. blank is newest
+        "tag": "latest" // Use prerelease, dev, blank or vx.x.x. blank is newest
     },
     {
         "user": "revanced",
@@ -89,11 +89,8 @@
   - APK without **x86** and **x86_64**
   - If you want to Release on Github, go to [main.py](./src/__main__.py) edit like
 ```python
-    release.create_github_release(app_name, source, download_files, signed_apk_filepath)
-
-    # key = f"{app_name}/{signed_apk_filepath}"
-
-    # upload_to_r2(signed_apk_filepath, bucket_name, key, endpoint_url, access_key_id, secret_access_key)
+    release.create_github_release(name, revanced_patches, revanced_cli, signed_apk)
+    # r2.upload(str(signed_apk), f"{app_name}/{signed_apk.name}")
 ```
   - Apps releases will be grouped by the name of json in the [./sources/](./sources)
   - Download APK at Releases
