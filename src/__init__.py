@@ -17,25 +17,13 @@ os_platforms = {
     "Linux": [
         "X11; Linux x86_64",
         "X11; Ubuntu; Linux x86_64"
-    ],
-    "Android": [
-        "Linux; Android 14; Pixel 8 Pro",
-        "Linux; Android 13; SM-G998B",
-        "Linux; Android 12; SM-G991B",
-        "Linux; Android 13; SM-S918B"
-    ],
-    "iOS": [
-        "iPhone; CPU iPhone OS 17_5 like Mac OS X",
-        "iPad; CPU OS 17_5 like Mac OS X"
     ]
 }
 
 browser_by_os = {
     "Windows": ["Chrome", "Firefox", "Edge", "Opera", "Vivaldi", "Brave"],
     "macOS": ["Chrome", "Firefox", "Safari", "Brave"],
-    "Linux": ["Chrome", "Firefox", "Vivaldi", "Brave"],
-    "Android": ["Chrome", "Firefox", "Samsung Browser", "Brave"],
-    "iOS": ["Safari", "Chrome"]
+    "Linux": ["Chrome", "Firefox", "Vivaldi", "Brave"]
 }
 
 browser_templates = {
@@ -45,10 +33,6 @@ browser_templates = {
     "Vivaldi": "Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver} Safari/537.36 Vivaldi/{ver}",
     "Brave": "Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver} Safari/537.36 Brave/{ver}",
     "Firefox": "Mozilla/5.0 ({platform}; rv:{ver}) Gecko/20100101 Firefox/{ver}",
-    "Samsung Browser": "Mozilla/5.0 ({platform}) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/{ver} Chrome/{ver} Safari/537.36",
-    "Firefox Focus": "Mozilla/5.0 ({platform}; Mobile; rv:{ver}) Gecko/{ver} Firefox/{ver} Focus",
-    "Firefox Klar": "Mozilla/5.0 ({platform}; Mobile; rv:{ver}) Gecko/{ver} Firefox/{ver} Klar",
-    "Firefox Nightly": "Mozilla/5.0 ({platform}; Mobile; rv:{ver}) Gecko/{ver} Firefox/{ver} Nightly",
     "Safari": "Mozilla/5.0 ({platform}) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/{ver} Mobile/15E148 Safari/604.1"
 }
 
@@ -56,8 +40,6 @@ browser_templates = {
 def random_version(browser):
     if browser in ["Chrome", "Edge", "Opera", "Vivaldi", "Brave"]:
         return f"{random.randint(120, 126)}.0.{random.randint(6000, 6399)}.{random.randint(50, 99)}"
-    elif browser == "Samsung Browser":
-        return f"{random.randint(20, 23)}.0"
     elif "Firefox" in browser:
         return f"{random.randint(122, 126)}.{random.randint(0, 9)}"
     elif browser == "Safari":
