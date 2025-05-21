@@ -3,111 +3,69 @@ on:
   workflow_dispatch:
 
 jobs:
-  patch-apps:
-    name: Read Matrix Configuration 
+  patch:
+    name: Patch All Applications
     runs-on: ubuntu-latest
-
-    outputs:
-      matrix: ${{ steps.read-matrix.outputs.matrix }}
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@main
-        with:
-          fetch-depth: 0
-
-      - name: Read Matrix Config
-        id: read-matrix
-        uses: actions/github-script@main
-        with:
-          script: |
-            const fs = require('fs');
-            const path = './patch-config.json';
-            const matrix = JSON.parse(fs.readFileSync(path, 'utf8')).patch_list;
-            core.setOutput("matrix", JSON.stringify(matrix));
-
-  matrix-patch:
-    name: Patch Applications
-    needs: patch-apps
     permissions: write-all
-    runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ENDPOINT_URL: ${{ secrets.ENDPOINT_URL }}
       BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
-    strategy:
-      matrix:
-        include: ${{ fromJson(needs.patch-apps.outputs.matrix) }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install Python
-        uses: actions/setup-python@main
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
-      - name: Cache Python packages
-        uses: actions/cache@main
+      - name: Cache pip packages
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Patch Application 
-        env:
-          APP_NAME: ${{ matrix.app_name }}
-          SOURCE: ${{ matrix.source }}
+      - name: Run Patch Script
         run: python -m src
 
-  cleanup:
-    name: Cleanup Workflow Runs
-    needs: matrix-patch
-    runs-on: ubuntu-latest
-    if: ${{ success() }}
-    permissions:
-      actions: write
-    steps:
-    - name: Cleanup Previous Workflow Runs
-      uses: actions/github-script@main
-      with:
-        script: |
-          const allRuns = [];
-          let page = 1;
-
-          while (true) {
-            const { data: runs } = await github.rest.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'patch.yml',
-              per_page: 100,
-              page,
-            });
-
-            if (runs.workflow_runs.length === 0) break;
-            allRuns.push(...runs.workflow_runs);
-            page++;
-          }
-
-          console.log(`Found ${allRuns.length} workflow runs.`);
-
-          for (const run of allRuns) {
-            if (run.id !== context.runId) {
-              console.log(`Deleting workflow run ID: ${run.id}`);
-              await github.rest.actions.deleteWorkflowRun({
+      - name: Cleanup Previous Workflow Runs
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const allRuns = [];
+            let page = 1;
+            while (true) {
+              const { data: runs } = await github.rest.actions.listWorkflowRuns({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                run_id: run.id,
+                workflow_id: 'patch.yml',
+                per_page: 100,
+                page,
               });
+              if (runs.workflow_runs.length === 0) break;
+              allRuns.push(...runs.workflow_runs);
+              page++;
             }
-          }
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            console.log(`Found ${allRuns.length} workflow runs.`);
+            for (const run of allRuns) {
+              if (run.id !== context.runId) {
+                console.log(`Deleting workflow run ID: ${run.id}`);
+                await github.rest.actions.deleteWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id,
+                });
+              }
+            }
