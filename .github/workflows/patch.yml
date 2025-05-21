@@ -1,108 +1,113 @@
-import json
-import logging
-from sys import exit
-from pathlib import Path
-from os import getenv
-from src import (
-    r2,
-    utils,
-    release,
-    downloader
-)
+name: Patch Revanced
+on:
+  workflow_dispatch:
 
-def run_build(app_name: str, source: str) -> str:
-    download_files, name = downloader.download_required(source)
+jobs:
+  patch-apps:
+    name: Read Matrix Configuration 
+    runs-on: ubuntu-latest
 
-    revanced_cli = utils.find_file(download_files, 'revanced-cli', '.jar')
-    revanced_patches = utils.find_file(download_files, 'patches', '.rvp')
+    outputs:
+      matrix: ${{ steps.read-matrix.outputs.matrix }}
 
-    download_methods = [
-        downloader.download_apkmirror,
-        downloader.download_apkpure,
-        downloader.download_uptodown
-    ]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
 
-    input_apk = None
-    version = None
-    for method in download_methods:
-        input_apk, version = method(app_name, revanced_cli, revanced_patches)
-        if input_apk:
-            break
+      - name: Read Matrix Config
+        id: read-matrix
+        uses: actions/github-script@main
+        with:
+          script: |
+            const fs = require('fs');
+            const path = './patch-config.json';
+            const matrix = JSON.parse(fs.readFileSync(path, 'utf8')).patch_list;
+            core.setOutput("matrix", JSON.stringify(matrix));
 
-    if input_apk.suffix != ".apk":
-        logging.warning("Input file is not .apk, using APKEditor to merge")
-        apk_editor = downloader.download_apkeditor()
+  matrix-patch:
+    name: Patch Applications
+    needs: patch-apps
+    permissions: write-all
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      ENDPOINT_URL: ${{ secrets.ENDPOINT_URL }}
+      BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.patch-apps.outputs.matrix) }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
 
-        merged_apk = input_apk.with_suffix(".apk")
+      - name: Install Python
+        uses: actions/setup-python@main
+        with:
+          python-version: 3.11
 
-        utils.run_process([
-            "java", "-jar", apk_editor, "m",
-            "-i", str(input_apk),
-            "-o", str(merged_apk)
-        ], silent=True)
+      - name: Cache Python packages
+        uses: actions/cache@main
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-        input_apk.unlink(missing_ok=True)
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
 
-        if not merged_apk.exists():
-            logging.error("Merged APK file not found")
-            exit(1)
+      - name: Patch Application 
+        env:
+          APP_NAME: ${{ matrix.app_name }}
+          SOURCE: ${{ matrix.source }}
+        run: python -m src
 
-        input_apk = merged_apk
-        logging.info(f"Merged APK file generated: {input_apk}")
+  cleanup:
+    name: Cleanup Workflow Runs
+    needs: matrix-patch
+    runs-on: ubuntu-latest
+    if: ${{ success() }}
+    permissions:
+      actions: write
+    steps:
+    - name: Cleanup Previous Workflow Runs
+      uses: actions/github-script@main
+      with:
+        script: |
+          const allRuns = [];
+          let page = 1;
 
-    exclude_patches = []
-    include_patches = []
+          while (true) {
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'patch.yml',
+              per_page: 100,
+              page,
+            });
 
-    patches_path = Path("patches") / f"{app_name}-{source}.txt"
-    if patches_path.exists():
-        with patches_path.open('r') as patches_file:
-            for line in patches_file:
-                line = line.strip()
-                if line.startswith('-'):
-                    exclude_patches.extend(["-d", line[1:].strip()])
-                elif line.startswith('+'):
-                    include_patches.extend(["-e", line[1:].strip()])
+            if (runs.workflow_runs.length === 0) break;
+            allRuns.push(...runs.workflow_runs);
+            page++;
+          }
 
-    utils.run_process([
-        "zip", "--delete", str(input_apk), "lib/x86/*", "lib/x86_64/*"
-    ], silent=True, check=False)
+          console.log(`Found ${allRuns.length} workflow runs.`);
 
-    output_apk = Path(f"{app_name}-patch-v{version}.apk")
-
-    utils.run_process([
-        "java", "-jar", str(revanced_cli),
-        "patch", "--patches", str(revanced_patches),
-        "--out", str(output_apk), str(input_apk),
-        *exclude_patches, *include_patches
-    ], stream=True)
-
-    input_apk.unlink(missing_ok=True)
-
-    signed_apk = Path(f"{app_name}-{name}-v{version}.apk")
-
-    apksigner = utils.find_apksigner()
-    if not apksigner:
-        exit(1)
-
-    utils.run_process([
-        str(apksigner), "sign", "--verbose",
-        "--ks", "keystore/public.jks",
-        "--ks-pass", "pass:public",
-        "--key-pass", "pass:public",
-        "--ks-key-alias", "public",
-        "--in", str(output_apk), "--out", str(signed_apk)
-    ], stream=True)
-
-    output_apk.unlink(missing_ok=True)
-    # release.create_github_release(name, revanced_patches, revanced_cli, signed_apk)
-    r2.upload(str(signed_apk), f"{app_name}/{signed_apk.name}")
-
-if __name__ == "__main__":
-    app_name = getenv("APP_NAME")
-    source = getenv("SOURCE")
-
-    if not app_name or not source:
-        logging.error("APP_NAME and SOURCE environment variables must be set")
-        exit(1)
-
-    run_build(app_name, source)
+          for (const run of allRuns) {
+            if (run.id !== context.runId) {
+              console.log(`Deleting workflow run ID: ${run.id}`);
+              await github.rest.actions.deleteWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: run.id,
+              });
+            }
+          }
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
