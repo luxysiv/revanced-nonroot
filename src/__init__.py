@@ -26,8 +26,7 @@ os_platforms = {
     ],
     "iOS": [
         "iPhone; CPU iPhone OS 17_5 like Mac OS X",
-        "iPad; CPU OS 17_5 like Mac OS X",
-        "iPod touch; CPU iPhone OS 17_5 like Mac OS X"
+        "iPad; CPU OS 17_5 like Mac OS X"
     ]
 }
 
@@ -60,7 +59,7 @@ def random_version(browser):
     elif browser == "Samsung Browser":
         return f"{random.randint(20, 23)}.0"
     elif "Firefox" in browser:
-        return f"{random.randint(122, 126)}.{random.randint(0, 9)}"  # Firefox 126.5
+        return f"{random.randint(122, 126)}.{random.randint(0, 9)}"
     elif browser == "Safari":
         return f"{random.randint(16, 17)}.{random.randint(0, 6)}"
     else:
