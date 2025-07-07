@@ -3,11 +3,11 @@ import logging
 import cgi
 import json
 from typing import List, Optional
+from src import gh
 from sys import exit
 import subprocess
 from pathlib import Path
 from urllib.parse import urlparse, unquote, parse_qs
-from src import session
 
 def find_file(files: list[Path], prefix: str, suffix: str) -> Path | None:
     return next(
@@ -31,7 +31,7 @@ def find_apksigner() -> str | None:
 
     logging.error("No apksigner found in build-tools")
     return None
-    
+
 def run_process(
     command: List[str],
     cwd: Optional[Path] = None,
@@ -125,7 +125,6 @@ def get_supported_version(package_name: str, cli: str, patches: str) -> Optional
     return get_highest_version(versions)
 
 def extract_filename(response, fallback_url=None) -> str:
-    # 1. Try Content-Disposition header
     cd = response.headers.get('content-disposition')
     if cd:
         _, params = cgi.parse_header(cd)
@@ -133,7 +132,6 @@ def extract_filename(response, fallback_url=None) -> str:
         if filename:
             return unquote(filename)
 
-    # 2. Try response-content-disposition from query string
     parsed = urlparse(response.url)
     query_params = parse_qs(parsed.query)
     rcd = query_params.get('response-content-disposition')
@@ -143,43 +141,42 @@ def extract_filename(response, fallback_url=None) -> str:
         if filename:
             return unquote(filename)
 
-    # 3. Fallback to URL path
     path = urlparse(fallback_url or response.url).path
     return unquote(Path(path).name)
 
 def detect_github_release(user: str, repo: str, tag: str) -> dict:
+    repo_obj = gh.get_repo(f"{user}/{repo}")
+
     if tag == "latest":
-        url = f"https://api.github.com/repos/{user}/{repo}/releases/latest"
-        response = session.get(url)
-        content_size = len(response.content)
-        logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
-        return response.json()
+        release = repo_obj.get_latest_release()
+        logging.info(f"Fetched latest release: {release.tag_name}")
+        return release.raw_data
 
     if tag in ["", "dev", "prerelease"]:
-        url = f"https://api.github.com/repos/{user}/{repo}/releases"
-        response = session.get(url)
-        content_size = len(response.content)
-        logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
-        releases = response.json()
+        releases = list(repo_obj.get_releases())
+        if not releases:
+            raise ValueError(f"No releases found for {user}/{repo}")
 
         if tag == "":
-            release = max(releases, key=lambda x: x['created_at'])
+            release = max(releases, key=lambda x: x.created_at)
         elif tag == "dev":
-            devs = [r for r in releases if 'dev' in r['tag_name'].lower()]
+            devs = [r for r in releases if 'dev' in r.tag_name.lower()]
             if not devs:
                 raise ValueError(f"No dev release found for {user}/{repo}")
-            release = max(devs, key=lambda x: x['created_at'])
+            release = max(devs, key=lambda x: x.created_at)
         else:
-            pres = [r for r in releases if r.get('prerelease')]
+            pres = [r for r in releases if r.prerelease]
             if not pres:
                 raise ValueError(f"No prerelease found for {user}/{repo}")
-            release = max(pres, key=lambda x: x['created_at'])
+            release = max(pres, key=lambda x: x.created_at)
 
-        return release
+        logging.info(f"Fetched release: {release.tag_name}")
+        return release.raw_data
 
-    # Specific version tag
-    url = f"https://api.github.com/repos/{user}/{repo}/releases/tags/{tag}"
-    response = session.get(url)
-    content_size = len(response.content)
-    logging.info(f"URL:{response.url} [{content_size}/{content_size}] -> \"-\" [1]")
-    return response.json()
+    try:
+        release = repo_obj.get_release(tag)
+        logging.info(f"Fetched release: {release.tag_name}")
+        return release.raw_data
+    except Exception as e:
+        logging.error(f"Error fetching release {tag} for {user}/{repo}: {e}")
+        raise

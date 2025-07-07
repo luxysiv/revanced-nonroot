@@ -2,6 +2,7 @@ import os
 import logging
 import random
 import requests
+from github import Github
 
 # --- Auto Generate User-Agent ---
 os_platforms = {
@@ -79,3 +80,4 @@ bucket_name = os.getenv('BUCKET_NAME')
 
 # APKmirror base url
 base_url = "https://www.apkmirror.com"
+gh = Github(github_token) if github_token else Github()
