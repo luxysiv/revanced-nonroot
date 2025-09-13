@@ -33,7 +33,8 @@ def get_download_link(version: str, app_name: str, config: str) -> str:
         
         for entry in version_data:
             if entry["version"] == version:
-                version_url = entry["versionURL"]
+                version_url_parts = entry["versionURL"]
+                version_url = f"{version_url_parts['url']}/{version_url_parts['extraURL']}/{version_url_parts['versionID']}"
                 version_page = session.get(version_url)
                 version_page.raise_for_status()
                 soup = BeautifulSoup(version_page.content, "html.parser")
