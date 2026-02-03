@@ -8,7 +8,6 @@
 
 ### Download
   - Download page: https://revanced-nonroot.timie.workers.dev/
- - [Revanced GmsCore](https://github.com/revanced/gmscore/releases/latest)
    > You can fork and add more sources and apps
 
 ### Usage 
@@ -85,7 +84,6 @@
   - [Revanced Extended](https://github.com/inotia00/revanced-patches/releases/latest)
 
 ### Note
-  - From now, ReVanced use [Revanced GmsCore](https://github.com/revanced/gmscore) to work.
   - APK without **x86** and **x86_64**
   - If you want to Release on Github, go to [main.py](./src/__main__.py) edit like
 ```python
