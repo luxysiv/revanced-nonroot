@@ -1,4 +1,0 @@
-boto3
-PyGithub
-requests
-beautifulsoup4
