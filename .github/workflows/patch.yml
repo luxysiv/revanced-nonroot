@@ -1,113 +1,98 @@
-name: Patch Revanced
+name: Patch Morphe
+
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+  actions: write
+
 jobs:
-  patch-apps:
-    name: Read Matrix Configuration 
+  build:
     runs-on: ubuntu-latest
 
-    outputs:
-      matrix: ${{ steps.read-matrix.outputs.matrix }}
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@main
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
+          node-version: 20
 
-      - name: Read Matrix Config
-        id: read-matrix
-        uses: actions/github-script@main
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          script: |
-            const fs = require('fs');
-            const path = './patch-config.json';
-            const matrix = JSON.parse(fs.readFileSync(path, 'utf8')).patch_list;
-            core.setOutput("matrix", JSON.stringify(matrix));
+          distribution: temurin
+          java-version: 17
 
-  matrix-patch:
-    name: Patch Applications
-    needs: patch-apps
-    permissions: write-all
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      ENDPOINT_URL: ${{ secrets.ENDPOINT_URL }}
-      BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
-    strategy:
-      matrix:
-        include: ${{ fromJson(needs.patch-apps.outputs.matrix) }}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@main
+      - name: Install dependencies
+        run: |
+          npm install
+          npx playwright install chromium --with-deps
+
+      - name: Run script
+        run: node patch.js
+
+      - name: Get APK file
+        id: apk
+        run: |
+          FILE=$(ls *-patched.apk 2>/dev/null | head -n 1)
+
+          if [ -z "$FILE" ]; then
+            echo "No patched APK found"
+            ls -la
+            exit 1
+          fi
+
+          echo "apk=$FILE" >> $GITHUB_OUTPUT
+
+      - name: Normalize APK filename
+        id: rename
+        run: |
+          FILE="${{ steps.apk.outputs.apk }}"
+          SAFE_NAME=$(echo "$FILE" | sed 's/[(), ]/_/g')
+
+          mv "$FILE" "$SAFE_NAME"
+
+          echo "apk=$SAFE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Generate tag
+        id: tag
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version || '1.0.0')")
+          TAG="youtube-${VERSION}-$(date +%s)"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          fetch-depth: 0
-
-      - name: Install Python
-        uses: actions/setup-python@main
-        with:
-          python-version: 3.11
-
-      - name: Cache Python packages
-        uses: actions/cache@main
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
-
-      - name: Patch Application 
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: YouTube Patched APK
+          files: ${{ steps.rename.outputs.apk }}
         env:
-          APP_NAME: ${{ matrix.app_name }}
-          SOURCE: ${{ matrix.source }}
-        run: python -m src
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  cleanup:
-    name: Cleanup Workflow Runs
-    needs: matrix-patch
-    runs-on: ubuntu-latest
-    if: ${{ success() }}
-    permissions:
-      actions: write
-    steps:
-    - name: Cleanup Previous Workflow Runs
-      uses: actions/github-script@main
-      with:
-        script: |
-          const allRuns = [];
-          let page = 1;
+      - name: Upload debug
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug
+          path: |
+            *.log
+            *.png
+            *.apk
 
-          while (true) {
-            const { data: runs } = await github.rest.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'patch.yml',
-              per_page: 100,
-              page,
-            });
+      - name: Delete old releases
+        uses: dev-drprasad/delete-older-releases@v0.3.4
+        with:
+          keep_latest: 1
+          delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            if (runs.workflow_runs.length === 0) break;
-            allRuns.push(...runs.workflow_runs);
-            page++;
-          }
-
-          console.log(`Found ${allRuns.length} workflow runs.`);
-
-          for (const run of allRuns) {
-            if (run.id !== context.runId) {
-              console.log(`Deleting workflow run ID: ${run.id}`);
-              await github.rest.actions.deleteWorkflowRun({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                run_id: run.id,
-              });
-            }
-          }
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Delete old workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          retain_days: 0
+          keep_minimum_runs: 1
