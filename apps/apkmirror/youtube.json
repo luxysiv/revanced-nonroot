@@ -1,9 +1,0 @@
-{
-    "org": "google-inc",
-    "name": "youtube",
-    "type": "APK", 
-    "arch": "universal",
-    "dpi": "nodpi",
-    "package" : "com.google.android.youtube",
-    "version" : ""
-}
