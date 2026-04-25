@@ -1,0 +1,16 @@
+{
+  "name": "apk-patcher",
+  "version": "1.0.0",
+  "description": "Download + patch YouTube APK via APKMirror + Morphe CLI",
+  "main": "patch.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node patch.js"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
