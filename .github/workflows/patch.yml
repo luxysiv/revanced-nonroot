@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -27,9 +27,7 @@ jobs:
           java-version: 17
 
       - name: Install dependencies
-        run: |
-          npm install
-          npx playwright install chromium --with-deps
+        run: npx playwright install chromium --with-deps
 
       - name: Run script
         run: node patch.js
