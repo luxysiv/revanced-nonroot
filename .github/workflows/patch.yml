@@ -27,10 +27,12 @@ jobs:
           java-version: 17
 
       - name: Install dependencies
-        run: npx playwright install chromium --with-deps
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps
 
       - name: Run script
-        run: node patch.js
+        run: node index.js
 
       - name: Get APK file
         id: apk
@@ -70,16 +72,6 @@ jobs:
           files: ${{ steps.rename.outputs.apk }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload debug
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug
-          path: |
-            *.log
-            *.png
-            *.apk
 
       - name: Delete old releases
         uses: dev-drprasad/delete-older-releases@v0.3.4
