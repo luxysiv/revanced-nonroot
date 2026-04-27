@@ -1,15 +1,19 @@
 const { execSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+
 const { downloadLatestGithubAsset } = require("./lib/github");
 const { extractYoutubeVersions, pickLatestVersion } = require("./lib/versions");
 const { downloadApk } = require("./lib/apkmirror");
 const { downloadFromUptodown } = require("./lib/uptodown");
 const { patchApk } = require("./lib/patcher");
+const { uploadApkRelease } = require("./lib/release");
 
 (async () => {
   try {
     console.log("🚀 START\n");
 
-    // 1. Tải CLI
+    // 1. Download Morphe CLI
     console.log("🌐 FETCH: morphe-cli (GitHub)");
     const cli = await downloadLatestGithubAsset({
       owner: "MorpheApp",
@@ -18,7 +22,7 @@ const { patchApk } = require("./lib/patcher");
     });
     console.log("📦 CLI:", cli);
 
-    // 2. Tải patches
+    // 2. Download patches
     console.log("🌐 FETCH: morphe-patches (GitHub)");
     const patches = await downloadLatestGithubAsset({
       owner: "MorpheApp",
@@ -27,7 +31,7 @@ const { patchApk } = require("./lib/patcher");
     });
     console.log("📦 PATCHES:", patches);
 
-    // 3. Lấy version
+    // 3. Extract versions
     console.log("⬇️ Extract versions...");
     const output = execSync(`
       java -jar "${cli}" list-patches \
@@ -43,7 +47,7 @@ const { patchApk } = require("./lib/patcher");
 
     console.log("➡️ TARGET:", selectedVersion);
 
-    // 4. Download APK (có fallback)
+    // 4. Download APK (with fallback)
     let apkPath;
 
     try {
@@ -59,7 +63,6 @@ const { patchApk } = require("./lib/patcher");
         apkPath = await downloadFromUptodown(selectedVersion);
       } catch (uptodownError) {
         console.log("❌ UPTODOWN FAIL:", uptodownError.message);
-
         throw new Error("All sources failed");
       }
     }
@@ -68,11 +71,51 @@ const { patchApk } = require("./lib/patcher");
 
     // 5. Patch
     console.log("⬇️ PATCHING...");
-    const patched = patchApk(cli, patches, apkPath);
+    const patchedPath = patchApk(cli, patches, apkPath);
 
-    console.log("📦 PATCHED:", patched);
+    console.log("📦 PATCHED (raw):", patchedPath);
 
-    // 6. Done
+    // 🔥 Morphe outputs patched APK in project root
+    const dir = process.cwd();
+
+    // 🔥 Get the newest patched APK (no version check)
+    const patchedFile = fs.readdirSync(dir)
+      .filter(f => f.endsWith("-patched.apk"))
+      .map(f => ({
+        name: f,
+        time: fs.statSync(path.join(dir, f)).mtime.getTime()
+      }))
+      .sort((a, b) => b.time - a.time)[0]?.name;
+
+    if (!patchedFile) {
+      console.log("📂 FILES IN ROOT:");
+      fs.readdirSync(dir).forEach(f => console.log(" -", f));
+      throw new Error("Patched APK not found (*-patched.apk)");
+    }
+
+    const actualPatched = path.join(dir, patchedFile);
+
+    console.log("🔍 FOUND PATCHED:", actualPatched);
+
+    // 6. Rename to clean name
+    const finalName = `youtube-${selectedVersion}-morphe.apk`;
+    const finalPath = path.join(dir, finalName);
+
+    fs.copyFileSync(actualPatched, finalPath);
+
+    console.log("📝 FINAL:", finalPath);
+
+    // (optional) cleanup original patched file
+    // fs.unlinkSync(actualPatched);
+
+    // 7. Upload to GitHub Release
+    console.log("🚀 UPLOAD RELEASE...");
+    await uploadApkRelease({
+      version: selectedVersion,
+      apkPath: finalPath,
+    });
+
+    // 8. Done
     console.log("\n🎉 DONE");
     console.log("──────────────");
 
@@ -80,7 +123,7 @@ const { patchApk } = require("./lib/patcher");
     console.log("📦 CLI:", cli);
     console.log("📦 PATCHES:", patches);
     console.log("📦 ORIGINAL:", apkPath);
-    console.log("📦 OUTPUT:", patched);
+    console.log("📦 OUTPUT:", finalPath);
 
   } catch (err) {
     console.error("\n❌ ERROR:", err.message);
