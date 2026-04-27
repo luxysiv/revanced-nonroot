@@ -33,43 +33,6 @@ jobs:
 
       - name: Run script
         run: node index.js
-
-      - name: Get APK file
-        id: apk
-        run: |
-          FILE=$(ls *-patched.apk 2>/dev/null | head -n 1)
-
-          if [ -z "$FILE" ]; then
-            echo "No patched APK found"
-            ls -la
-            exit 1
-          fi
-
-          echo "apk=$FILE" >> $GITHUB_OUTPUT
-
-      - name: Normalize APK filename
-        id: rename
-        run: |
-          FILE="${{ steps.apk.outputs.apk }}"
-          SAFE_NAME=$(echo "$FILE" | sed 's/[(), ]/_/g')
-
-          mv "$FILE" "$SAFE_NAME"
-
-          echo "apk=$SAFE_NAME" >> $GITHUB_OUTPUT
-
-      - name: Generate tag
-        id: tag
-        run: |
-          VERSION=$(node -e "console.log(require('./package.json').version || '1.0.0')")
-          TAG="youtube-${VERSION}-$(date +%s)"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: YouTube Patched APK
-          files: ${{ steps.rename.outputs.apk }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
