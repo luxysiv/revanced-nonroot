@@ -41,7 +41,7 @@ const { uploadApkRelease } = require("./lib/release");
     const output = execSync(
       `java -jar "${cli}" list-versions \
         -f com.google.android.youtube \
-        "${patches}"`,
+        --patches="${patches}"`,
       {
         encoding: "utf-8",
         maxBuffer: 1024 * 1024 * 10,
